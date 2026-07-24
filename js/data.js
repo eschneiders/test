@@ -15,6 +15,11 @@ const VILLA = {
   ownerEmail: "mpschneiders@gmail.com",    // ← enquiries + mailto fallback
   phone: "+351 000 000 000",               // ← optional; leave as-is to hide
 
+  /* SEO / addressing — IMPORTANT: set siteUrl to your real address once live -*/
+  siteUrl: "https://casa-da-luz.netlify.app",   // ← your live URL (no trailing slash)
+  address: { locality: "Praia da Luz", region: "Lagos", country: "PT" },
+  geo: { lat: 37.0879, lng: -8.7263 },     // approx Praia da Luz; refine if you like
+
   /* Key facts shown under the hero ----------------------------------------- */
   stats: { bedrooms: 5, bathrooms: 5, sleeps: 10 },
 
@@ -77,3 +82,8 @@ const DEMO_BOOKED_OFFSETS = [
   { startIn: 24, nights: 5 },
   { startIn: 45, nights: 9 },
 ];
+
+/* Node (build script) access — ignored in the browser. */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { VILLA, HERO_SLIDES, GALLERY_SLIDES, AMENITY_KEYS, DEMO_BOOKED_OFFSETS };
+}

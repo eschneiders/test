@@ -20,12 +20,18 @@ prices. Pure HTML/CSS/JavaScript — no build step, no server, no monthly fees.
 | `admin.html` | Private owner login & booking manager (`/admin.html`) |
 | `css/styles.css` | All public-site styling |
 | `css/admin.css` | Owner-panel styling |
-| `js/data.js` | **Your facts** — villa name, email, nightly rates, photos |
+| `js/data.js` | **Your facts** — villa name, email, `siteUrl`, nightly rates, photos |
 | `js/i18n.js` | **Translations** — all wording, in 4 languages |
+| `build.js` | Generates the per-language pages, sitemap & robots |
 | `js/calendar.js` | Availability engine (per-night, shared) |
 | `js/main.js` | Public-site behaviour |
 | `js/admin.js` | Owner-panel behaviour |
-| `assets/` | Drop your photos here |
+| `assets/` | Drop your photos here (incl. `og-image.jpg`) |
+
+The pages guests see — `index.html` (English) and `pt/` `fr/` `de/` — plus
+`sitemap.xml` and `robots.txt` are **generated** by `build.js`. Don't edit them
+by hand; edit `js/i18n.js` / `js/data.js` and run `node build.js` (Netlify does
+this automatically on every deploy).
 
 ## Quick start
 
@@ -106,9 +112,36 @@ panel, but because everything runs in the browser, it is not strong security.
 Don't store anything sensitive here. For real access control you'd add a backend
 login; happy to set that up if you want it.
 
+## SEO & languages
+
+The site is built for search visibility:
+
+- **A real page per language** — `/`, `/pt/`, `/fr/`, `/de/` — each with its
+  content in the HTML (not just JavaScript), so Google can read and rank it in
+  each market. `hreflang` tags link the versions together.
+- **Rich link previews** — Open Graph / Twitter tags, so sharing the link on
+  WhatsApp, Facebook, etc. shows a photo, title and description.
+- **Structured data** (schema.org `VacationRental`) describing the property,
+  address, amenities and location — helps Google understand it's a place to stay.
+- **`sitemap.xml` + `robots.txt`** for complete indexing.
+
+**Two things you must do for SEO to work:**
+
+1. Set **`siteUrl`** in `js/data.js` to your real address (e.g.
+   `https://casadaluz.com`) — the canonical, hreflang and sitemap URLs depend on
+   it. Then rebuild/redeploy.
+2. Add an **`assets/og-image.jpg`** (a nice wide photo of the villa, ~1200×630)
+   so shared links show an image.
+
+Then, once live: add the site to **Google Search Console** and submit
+`sitemap.xml`. Realistically, a single villa ranks best for its own name and
+specific long-tail phrases — the bulk of early bookings will come from listing
+on Airbnb/Vrbo and luxury villa portals, with this site as your brand anchor and
+commission-free direct-booking channel.
+
 ## Hosting
 
 This site is set up for **Netlify** (free tier) — see **`DEPLOY.md`** for the
 short step-by-step. It auto-redeploys whenever code is pushed to the connected
-branch. Any other static host (GitHub Pages, Cloudflare Pages, Vercel) also
-works, though the built-in enquiry-form capture is a Netlify feature.
+branch, running `node build.js` to regenerate the language pages. Any other
+static host works too, but it would need to run the same build step.

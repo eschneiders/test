@@ -12,6 +12,11 @@ const LANG_KEY = "villa.lang";
 
 const I18N = {
   en: {
+    seo: {
+      title: "Casa da Luz — Luxury Algarve Villa in Praia da Luz",
+      description: "A private 5-bedroom luxury villa in Praia da Luz, Lagos, Western Algarve, with heated infinity pool and panoramic sea views. Check availability and book direct.",
+      ogAlt: "Casa da Luz — luxury villa in the Algarve",
+    },
     nav: { villa: "The Villa", gallery: "Gallery", availability: "Availability", location: "Location", enquire: "Enquire" },
     hero: { ctaCheck: "Check availability", ctaDiscover: "Discover the villa" },
     intro: {
@@ -76,6 +81,11 @@ const I18N = {
   },
 
   pt: {
+    seo: {
+      title: "Casa da Luz — Villa de Luxo no Algarve, Praia da Luz",
+      description: "Villa de luxo privada com 5 quartos na Praia da Luz, Lagos, no Algarve Ocidental, com piscina infinita aquecida e vistas panorâmicas de mar. Veja a disponibilidade e reserve diretamente.",
+      ogAlt: "Casa da Luz — villa de luxo no Algarve",
+    },
     nav: { villa: "A Casa", gallery: "Galeria", availability: "Disponibilidade", location: "Localização", enquire: "Reservar" },
     hero: { ctaCheck: "Ver disponibilidade", ctaDiscover: "Descobrir a casa" },
     intro: {
@@ -140,6 +150,11 @@ const I18N = {
   },
 
   fr: {
+    seo: {
+      title: "Casa da Luz — Villa de Luxe en Algarve, Praia da Luz",
+      description: "Villa de luxe privée de 5 chambres à Praia da Luz, Lagos, dans l'Algarve occidental, avec piscine à débordement chauffée et vue mer panoramique. Disponibilités et réservation directe.",
+      ogAlt: "Casa da Luz — villa de luxe en Algarve",
+    },
     nav: { villa: "La Villa", gallery: "Galerie", availability: "Disponibilités", location: "Emplacement", enquire: "Réserver" },
     hero: { ctaCheck: "Voir les disponibilités", ctaDiscover: "Découvrir la villa" },
     intro: {
@@ -204,6 +219,11 @@ const I18N = {
   },
 
   de: {
+    seo: {
+      title: "Casa da Luz — Luxusvilla an der Algarve, Praia da Luz",
+      description: "Private 5-Schlafzimmer-Luxusvilla in Praia da Luz, Lagos, an der westlichen Algarve, mit beheiztem Infinity-Pool und Panorama-Meerblick. Verfügbarkeit prüfen und direkt buchen.",
+      ogAlt: "Casa da Luz — Luxusvilla an der Algarve",
+    },
     nav: { villa: "Die Villa", gallery: "Galerie", availability: "Verfügbarkeit", location: "Lage", enquire: "Anfragen" },
     hero: { ctaCheck: "Verfügbarkeit prüfen", ctaDiscover: "Die Villa entdecken" },
     intro: {
@@ -297,4 +317,9 @@ function moneyFmt(lang = getLang()) {
 function nights(n, lang = getLang()) {
   const w = n === 1 ? t("night.one", lang) : t("night.other", lang);
   return `${n} ${w}`;
+}
+
+/* Node (build script) access — ignored in the browser. */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { I18N, LANGS, LANG_LABEL, LOCALE };
 }

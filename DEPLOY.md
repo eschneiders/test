@@ -45,6 +45,30 @@ Netlify dashboard automatically. To also get an email each time someone enquires
 - **Content/photos**: whenever code is pushed to the connected branch, Netlify
   rebuilds automatically. Nothing else to do.
 
+## Set your real URL (for SEO) — once you know it
+
+The site's SEO tags (canonical links, `hreflang`, sitemap) need to know its real
+address. Once you've picked your Netlify subdomain or custom domain:
+
+1. Set **`siteUrl`** in `js/data.js` to that address (no trailing slash), e.g.
+   `https://casa-da-luz.netlify.app` or `https://casadaluz.com`.
+2. Redeploy (just push, or let me do it). The build regenerates everything.
+
+Also add a wide photo at **`assets/og-image.jpg`** (~1200×630) so shared links
+show an image.
+
+## Get found on Google
+
+Once live, add the site to **Google Search Console**
+(search.google.com/search-console):
+
+1. Add your site as a property and verify it (Netlify makes this easy via DNS or
+   an HTML tag).
+2. Submit **`sitemap.xml`** under **Sitemaps**.
+
+This tells Google about all four language pages. See the README's "SEO &
+languages" section for the bigger-picture strategy.
+
 ## Adding a custom domain later (optional)
 
 When you're ready for a branded address (e.g. `casadaluz.com`):
@@ -52,5 +76,6 @@ When you're ready for a branded address (e.g. `casadaluz.com`):
 1. Buy the domain (Netlify can sell you one, or use any registrar).
 2. In Netlify: **Domain management → Add a domain** and follow the prompts.
    HTTPS is set up automatically and free.
+3. Remember to update `siteUrl` in `js/data.js` to the new domain.
 
 I can walk you through this whenever you like.

@@ -1,7 +1,9 @@
-# Netlify configuration for Casa da Luz (static site — no build step needed).
-# The whole repo root is published as-is.
+# Netlify configuration for Casa da Luz.
+# `node build.js` regenerates the per-language pages (/, /pt/, /fr/, /de/),
+# sitemap.xml and robots.txt from js/i18n.js + js/data.js on every deploy.
 
 [build]
+  command = "node build.js"
   publish = "."
 
 # Nice, clean URLs and a sensible cache for static assets.

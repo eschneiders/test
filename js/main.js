@@ -1,148 +1,31 @@
 /* ============================================================================
-   Public site behaviour — i18n, carousels, flexible date-range picker,
-   live price quote, and the enquiry form.
+   Public site behaviour. Content and per-language text are baked into the HTML
+   by build.js, so this script only ENHANCES the page: carousels, the flexible
+   date-range picker, the live price quote and the enquiry form. The active
+   language is read from <html lang>.
    ============================================================================ */
 
-/* --- tiny line-icon set for amenities -------------------------------------- */
-const ICONS = {
-  pool:  '<svg viewBox="0 0 24 24"><path d="M2 18c2 0 2-1.5 4-1.5S8 18 10 18s2-1.5 4-1.5S16 18 18 18s2-1.5 4-1.5"/><path d="M2 22c2 0 2-1.5 4-1.5S8 22 10 22s2-1.5 4-1.5S16 22 18 22s2-1.5 4-1.5"/><path d="M8 14V4a2 2 0 0 1 4 0M16 14V4"/></svg>',
-  sea:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M2 16c2 0 2-1.4 4-1.4S8 16 10 16s2-1.4 4-1.4S16 16 18 16s2-1.4 4-1.4M2 20c2 0 2-1.4 4-1.4S8 20 10 20s2-1.4 4-1.4S16 20 18 20s2-1.4 4-1.4"/></svg>',
-  chef:  '<svg viewBox="0 0 24 24"><path d="M6 13a4 4 0 1 1 1-7.9 4 4 0 0 1 10 0A4 4 0 1 1 18 13z"/><path d="M6 13v6a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-6"/></svg>',
-  wifi:  '<svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0"/><circle cx="12" cy="19" r="1"/></svg>',
-  ac:    '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="7" rx="2"/><path d="M6 15v1M10 15v2M14 15v1M18 15v2"/></svg>',
-  car:   '<svg viewBox="0 0 24 24"><path d="M3 13l2-5a2 2 0 0 1 2-1.3h10A2 2 0 0 1 19 8l2 5v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/></svg>',
-  garden:'<svg viewBox="0 0 24 24"><path d="M12 22V9M12 9c0-3 2-5 5-5-1 3-3 5-5 5zM12 12C12 9 10 7 6 7c1 3 3 5 6 5z"/></svg>',
-  beach: '<svg viewBox="0 0 24 24"><path d="M4 20h16M12 20V9M12 9a6 6 0 0 1 8 3M12 9a6 6 0 0 0-8 3"/></svg>',
-};
-
-let LANG = getLang();
+let LANG = document.documentElement.lang || "en";
 let sel = { checkIn: null, checkOut: null };   // Date objects
 let hoverKey = null;
 
-/* --- boot ------------------------------------------------------------------ */
-
 document.addEventListener("DOMContentLoaded", () => {
-  setLang(LANG);
-  buildLangSwitch();
   initHero();
   initGallery();
   initCalendarEvents();
   initChrome();
   initForm();
   initTestimonialRotation();
-  renderAll();
-});
-
-/* --- render everything for the current language ---------------------------- */
-
-function renderAll() {
-  applyStatic();
-  renderStats();
-  renderAmenities();
-  renderHighlights();
-  renderTestimonials();
-  setGalleryCaptions();
-  renderFooterContact();
   renderCalendar();
   updateSelectionOutputs();
-}
+});
 
-function applyStatic() {
-  document.documentElement.lang = LANG;
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const v = t(el.getAttribute("data-i18n"));
-    if (v) el.textContent = v;
-  });
-  document.querySelectorAll("[data-villa-name]").forEach(el => el.textContent = VILLA.name);
-  document.querySelectorAll("[data-villa-location]").forEach(el => el.textContent = VILLA.locationShort);
-  document.querySelectorAll("[data-villa-location-long]").forEach(el => el.textContent = VILLA.locationLong);
-
-  document.getElementById("introLede").textContent = t("intro.lede").replace("%NAME%", VILLA.name);
-  const msg = document.getElementById("fMessage");
-  if (msg) msg.placeholder = t("enquire.messagePh");
-
-  document.title = `${VILLA.name} — Luxury Algarve Villa`;
-  document.getElementById("year").textContent = new Date().getFullYear();
-}
-
-/* --- language switch ------------------------------------------------------- */
-
-function buildLangSwitch() {
-  const box = document.getElementById("langSwitch");
-  box.innerHTML = LANGS.map(l =>
-    `<button type="button" data-lang="${l}" class="${l === LANG ? "active" : ""}">${LANG_LABEL[l]}</button>`).join("");
-  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => changeLang(b.dataset.lang)));
-}
-
-function changeLang(l) {
-  if (l === LANG) return;
-  LANG = l;
-  setLang(l);
-  document.querySelectorAll("#langSwitch button").forEach(b => b.classList.toggle("active", b.dataset.lang === l));
-  renderAll();
-}
-
-/* --- content blocks -------------------------------------------------------- */
-
-function renderStats() {
-  const items = [
-    { num: VILLA.stats.bedrooms,  lab: t("stats.bedrooms") },
-    { num: VILLA.stats.bathrooms, lab: t("stats.bathrooms") },
-    { num: VILLA.stats.sleeps,    lab: t("stats.sleeps") },
-  ];
-  document.getElementById("stats").innerHTML =
-    items.map(i => `<li><span class="num">${i.num}</span><span class="lab">${i.lab}</span></li>`).join("");
-}
-
-function renderAmenities() {
-  document.getElementById("amenityGrid").innerHTML = AMENITY_KEYS.map(key => `
-    <li class="amenity">
-      <div class="ic">${ICONS[key] || ""}</div>
-      <h3>${t("amenities." + key + ".t")}</h3>
-      <p>${t("amenities." + key + ".d")}</p>
-    </li>`).join("");
-}
-
-function renderHighlights() {
-  const hl = t("location.highlights") || [];
-  document.getElementById("highlights").innerHTML = hl.map(h => `
-    <li><span class="place">${h.p}</span><span class="detail">${h.d}</span></li>`).join("");
-}
-
-function renderTestimonials() {
-  const wrap = document.getElementById("testimonials");
-  const items = t("testimonials.items") || [];
-  wrap.innerHTML = items.map((it, i) => `
-    <figure class="testimonial ${i === 0 ? "active" : ""}">
-      <blockquote>“${it.q}”</blockquote>
-      <figcaption class="who">${it.w}</figcaption>
-    </figure>`).join("");
-}
-
-function renderFooterContact() {
-  let html = `<a href="mailto:${VILLA.ownerEmail}">${VILLA.ownerEmail}</a>`;
-  if (VILLA.phone && !VILLA.phone.includes("000 000 000")) {
-    html += `<a href="tel:${VILLA.phone.replace(/\s/g,"")}">${VILLA.phone}</a>`;
-  }
-  document.getElementById("footerContact").innerHTML = html;
-}
-
-/* --- placeholder / image slide markup -------------------------------------- */
-
-function slideMarkup(slide, extraClass, label) {
-  if (slide.image) {
-    return `<div class="${extraClass}" style="background:url('${slide.image}') center/cover"></div>`;
-  }
-  return `<div class="${extraClass} ph" data-tone="${slide.tone}"><span class="ph-label">${label || ""}</span></div>`;
-}
-
-/* --- hero carousel --------------------------------------------------------- */
+/* --- hero carousel (enhances baked slides) --------------------------------- */
 
 function initHero() {
   const track = document.getElementById("heroCarousel");
+  const slides = [...track.querySelectorAll(".hero-slide")];
   const dots = document.getElementById("heroDots");
-  track.innerHTML = HERO_SLIDES.map(s => slideMarkup(s, "hero-slide")).join("");
-  const slides = [...track.children];
   dots.innerHTML = slides.map((_, i) => `<button aria-label="Slide ${i+1}"></button>`).join("");
   const dotEls = [...dots.children];
 
@@ -157,13 +40,12 @@ function initHero() {
   if (slides.length > 1) setInterval(() => show((i + 1) % slides.length), 5500);
 }
 
-/* --- gallery carousel ------------------------------------------------------ */
+/* --- gallery carousel (enhances baked slides) ------------------------------ */
 
 function initGallery() {
   const track = document.getElementById("galleryTrack");
+  const slides = [...track.querySelectorAll(".gc-slide")];
   const dots = document.getElementById("galleryDots");
-  track.innerHTML = GALLERY_SLIDES.map(s => slideMarkup(s, "gc-slide")).join("");
-  const slides = [...track.children];
   dots.innerHTML = slides.map((_, i) => `<button aria-label="Photo ${i+1}"></button>`).join("");
   const dotEls = [...dots.children];
 
@@ -183,20 +65,14 @@ function initGallery() {
   slides.forEach(s => io.observe(s));
 }
 
-function setGalleryCaptions() {
-  const caps = t("gallery.captions") || [];
-  document.querySelectorAll("#galleryTrack .gc-slide .ph-label").forEach((el, i) => {
-    if (caps[i]) el.textContent = caps[i];
-  });
-}
-
 /* --- date-range picker ----------------------------------------------------- */
 
 function weekdayHeaders() {
   const loc = LOCALE[LANG] || "en-GB";
   const fmt = new Intl.DateTimeFormat(loc, { weekday: "short" });
   const monday = new Date(2024, 0, 1);                 // a Monday
-  return [...Array(7)].map((_, i) => fmt.format(addDays(monday, i)));
+  // Trim to 3 chars so columns stay tidy across languages (e.g. pt "segunda").
+  return [...Array(7)].map((_, i) => fmt.format(addDays(monday, i)).replace(/\.$/, "").slice(0, 3));
 }
 
 function renderCalendar() {
@@ -222,7 +98,6 @@ function renderCalendar() {
   paintSelection();
 }
 
-// Delegated calendar interactions (attached once).
 function initCalendarEvents() {
   const cal = document.getElementById("calendar");
   cal.addEventListener("click", e => {
@@ -240,17 +115,15 @@ function onDayClick(key) {
   const d = parseKey(key);
   const state = loadState();
 
-  // Starting a fresh selection (nothing chosen, or a full range already set).
   if (!sel.checkIn || (sel.checkIn && sel.checkOut)) {
     sel = { checkIn: d, checkOut: null };
   } else {
-    // We have a check-in and are choosing the check-out.
     if (d <= sel.checkIn) {
-      sel = { checkIn: d, checkOut: null };            // restart earlier
+      sel = { checkIn: d, checkOut: null };
     } else if (isRangeAvailable(sel.checkIn, d, state)) {
       sel.checkOut = d;
     } else {
-      flashCalMessage(t("avail.unavailable"));         // range crosses booked nights
+      flashCalMessage(t("avail.unavailable", LANG));
       sel = { checkIn: d, checkOut: null };
     }
   }
@@ -259,7 +132,6 @@ function onDayClick(key) {
   updateSelectionOutputs();
 }
 
-// Preview end date while hovering during the check-out phase (if valid).
 function previewOut(state) {
   if (sel.checkIn && !sel.checkOut && hoverKey) {
     const h = parseKey(hoverKey);
@@ -282,14 +154,11 @@ function paintSelection() {
 
 function flashCalMessage(text) {
   const q = document.getElementById("quote");
-  const prev = q.dataset.flash;
-  q.dataset.flash = "1";
   const note = document.createElement("div");
   note.className = "quote-flash";
   note.textContent = text;
   q.prepend(note);
-  setTimeout(() => { note.remove(); delete q.dataset.flash; }, 3200);
-  if (prev) return;
+  setTimeout(() => note.remove(), 3200);
 }
 
 /* --- quote panel + form outputs -------------------------------------------- */
@@ -300,27 +169,26 @@ function updateSelectionOutputs() {
   const q = document.getElementById("quote");
   const belowMin = sel.checkIn && sel.checkOut && quote(sel.checkIn, sel.checkOut, state).nights < VILLA.minNights;
 
-  // Quote panel
   if (!sel.checkIn) {
     q.innerHTML = `<div class="quote-empty">
       <span class="quote-ic">📅</span>
-      <p>${t("avail.pickPrompt")}</p>
-      <p class="quote-min">${t("avail.minStay").replace("%N", VILLA.minNights)}</p>
+      <p>${t("avail.pickPrompt", LANG)}</p>
+      <p class="quote-min">${t("avail.minStay", LANG).replace("%N", VILLA.minNights)}</p>
     </div>`;
   } else if (!sel.checkOut) {
     q.innerHTML = `
-      <div class="quote-line"><span>${t("avail.checkIn")}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
-      <p class="quote-prompt">${t("avail.pickCheckout")}</p>
+      <div class="quote-line"><span>${t("avail.checkIn", LANG)}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
+      <p class="quote-prompt">${t("avail.pickCheckout", LANG)}</p>
       ${clearBtn()}`;
   } else {
     const { nights: n, total, avg } = quote(sel.checkIn, sel.checkOut, state);
     q.innerHTML = `
-      <div class="quote-line"><span>${t("avail.checkIn")}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
-      <div class="quote-line"><span>${t("avail.checkOut")}</span><strong>${fmtDate(sel.checkOut, LANG)}</strong></div>
-      <div class="quote-line quote-nights"><span>${nights(n, LANG)}</span><span>${fmt.format(avg)} · ${t("avail.perNight")}</span></div>
-      <div class="quote-total"><span>${t("avail.total")}</span><strong>${fmt.format(total)}</strong></div>
-      ${belowMin ? `<p class="quote-warn">${t("avail.tooShort").replace("%N", VILLA.minNights)}</p>` : ""}
-      <button type="button" class="btn btn-primary btn-block" id="quoteEnquire" ${belowMin ? "disabled" : ""}>${t("avail.enquireBtn")}</button>
+      <div class="quote-line"><span>${t("avail.checkIn", LANG)}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
+      <div class="quote-line"><span>${t("avail.checkOut", LANG)}</span><strong>${fmtDate(sel.checkOut, LANG)}</strong></div>
+      <div class="quote-line quote-nights"><span>${nights(n, LANG)}</span><span>${fmt.format(avg)} · ${t("avail.perNight", LANG)}</span></div>
+      <div class="quote-total"><span>${t("avail.total", LANG)}</span><strong>${fmt.format(total)}</strong></div>
+      ${belowMin ? `<p class="quote-warn">${t("avail.tooShort", LANG).replace("%N", VILLA.minNights)}</p>` : ""}
+      <button type="button" class="btn btn-primary btn-block" id="quoteEnquire" ${belowMin ? "disabled" : ""}>${t("avail.enquireBtn", LANG)}</button>
       ${clearBtn()}`;
     if (!belowMin) {
       document.getElementById("quoteEnquire").addEventListener("click", () =>
@@ -330,7 +198,6 @@ function updateSelectionOutputs() {
   const clr = document.getElementById("clearDates");
   if (clr) clr.addEventListener("click", clearSelection);
 
-  // Enquiry form fields
   const display = document.getElementById("datesDisplay");
   const setHidden = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
   if (sel.checkIn && sel.checkOut && !belowMin) {
@@ -344,15 +211,15 @@ function updateSelectionOutputs() {
     setHidden("fTotal", total);
     setHidden("fDates", `${readable} (~${fmt.format(total)})`);
   } else {
-    display.textContent = t("enquire.datesFlexible");
+    display.textContent = t("enquire.datesFlexible", LANG);
     display.classList.remove("has-dates");
     ["fCheckIn","fCheckOut","fNights","fTotal"].forEach(id => setHidden(id, ""));
-    setHidden("fDates", t("enquire.datesFlexible"));
+    setHidden("fDates", t("enquire.datesFlexible", LANG));
   }
 }
 
 function clearBtn() {
-  return `<button type="button" class="quote-clear" id="clearDates">${t("avail.clear")}</button>`;
+  return `<button type="button" class="quote-clear" id="clearDates">${t("avail.clear", LANG)}</button>`;
 }
 
 function clearSelection() {
@@ -395,7 +262,7 @@ function showSuccess() {
 
 function openMailto() {
   const val = id => document.getElementById(id).value.trim();
-  const dates = val("fDates") || t("enquire.datesFlexible");
+  const dates = val("fDates") || t("enquire.datesFlexible", LANG);
   const subject = `Booking enquiry — ${VILLA.name}`;
   const body =
     `Hello,\n\nI'd like to enquire about staying at ${VILLA.name}.\n\n` +
@@ -424,13 +291,16 @@ function initChrome() {
     toggle.classList.toggle("open", open);
     toggle.setAttribute("aria-expanded", open);
   });
-  nav.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
-    nav.classList.remove("open"); toggle.classList.remove("open");
-    toggle.setAttribute("aria-expanded", false);
-  }));
+  nav.querySelectorAll("a").forEach(a => {
+    if (a.closest(".lang-switch")) return;      // language links navigate away — leave them
+    a.addEventListener("click", () => {
+      nav.classList.remove("open"); toggle.classList.remove("open");
+      toggle.setAttribute("aria-expanded", false);
+    });
+  });
 }
 
-/* --- testimonials rotation (reads current DOM each tick) ------------------- */
+/* --- testimonials rotation ------------------------------------------------- */
 
 function initTestimonialRotation() {
   let i = 0;
