@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casa da Luz — Luxury Algarve Villa</title>
+  <meta name="description" content="A private luxury villa retreat in the Western Algarve, Portugal. Check availability and enquire to book your stay." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a href="#top" class="brand" data-villa-name>Casa da Luz</a>
+      <nav class="nav" id="nav">
+        <a href="#villa">The Villa</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#availability">Availability</a>
+        <a href="#location">Location</a>
+        <a href="#enquire" class="nav-cta">Enquire</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" id="top">
+    <div class="hero-carousel" id="heroCarousel" aria-label="Villa photographs"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <p class="eyebrow" data-villa-location>Praia da Luz · Lagos</p>
+      <h1 class="hero-title" data-villa-name>Casa da Luz</h1>
+      <p class="hero-tagline" data-villa-tagline>A private Algarve retreat, moments from the sea</p>
+      <div class="hero-actions">
+        <a href="#availability" class="btn btn-primary">Check availability</a>
+        <a href="#villa" class="btn btn-ghost">Discover the villa</a>
+      </div>
+    </div>
+    <div class="hero-dots" id="heroDots" aria-hidden="true"></div>
+    <a href="#villa" class="scroll-cue" aria-label="Scroll down"><span></span></a>
+  </section>
+
+  <!-- ===================== INTRO / STATS ===================== -->
+  <section class="section intro" id="villa">
+    <div class="container narrow center">
+      <p class="eyebrow">The Villa</p>
+      <h2 class="section-title">An elegant escape on the Atlantic</h2>
+      <p class="lede">
+        Set among mature Mediterranean gardens with sweeping views over the bay,
+        <span data-villa-name>Casa da Luz</span> is a refined family retreat where
+        light-filled interiors open onto sun-drenched terraces. Every detail has
+        been considered for a truly restful stay.
+      </p>
+      <ul class="stats" id="stats"></ul>
+    </div>
+  </section>
+
+  <!-- ===================== AMENITIES ===================== -->
+  <section class="section amenities alt">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Comfort</p>
+        <h2 class="section-title">Thoughtfully appointed</h2>
+      </div>
+      <ul class="amenity-grid" id="amenityGrid"></ul>
+    </div>
+  </section>
+
+  <!-- ===================== GALLERY ===================== -->
+  <section class="section gallery" id="gallery">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Gallery</p>
+        <h2 class="section-title">A glimpse inside</h2>
+      </div>
+    </div>
+    <div class="gallery-carousel">
+      <button class="gc-arrow gc-prev" id="galPrev" aria-label="Previous photo">‹</button>
+      <div class="gc-track" id="galleryTrack"></div>
+      <button class="gc-arrow gc-next" id="galNext" aria-label="Next photo">›</button>
+    </div>
+    <div class="gallery-dots" id="galleryDots" aria-hidden="true"></div>
+  </section>
+
+  <!-- ===================== AVAILABILITY ===================== -->
+  <section class="section availability alt" id="availability">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Availability &amp; Rates</p>
+        <h2 class="section-title">Find your week</h2>
+        <p class="section-sub">
+          Weekly stays, changeover on Saturday. Select an available week to enquire.
+        </p>
+      </div>
+
+      <div class="cal-legend">
+        <span class="lg lg-avail">Available</span>
+        <span class="lg lg-booked">Booked</span>
+        <span class="lg lg-selected">Selected</span>
+      </div>
+
+      <div class="cal" id="calendar"></div>
+
+      <p class="cal-note">
+        Rates are per week for the whole villa. Prices shown are indicative;
+        your final quote is confirmed by email.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== ENQUIRE ===================== -->
+  <section class="section enquire" id="enquire">
+    <div class="container narrow">
+      <div class="section-head center">
+        <p class="eyebrow">Booking</p>
+        <h2 class="section-title">Request your stay</h2>
+        <p class="section-sub">
+          Send an enquiry and we'll confirm availability and the final price by email.
+        </p>
+      </div>
+
+      <div class="selected-week" id="selectedWeek" hidden>
+        <span class="sw-label">Selected week</span>
+        <span class="sw-value" id="selectedWeekText"></span>
+        <button type="button" class="sw-clear" id="clearWeek" aria-label="Clear selection">×</button>
+      </div>
+
+      <form class="enquiry-form" id="enquiryForm">
+        <div class="field">
+          <label for="fName">Full name</label>
+          <input type="text" id="fName" name="name" required />
+        </div>
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input type="email" id="fEmail" name="email" required />
+        </div>
+        <div class="field">
+          <label for="fWeek">Preferred week</label>
+          <select id="fWeek" name="week"></select>
+        </div>
+        <div class="field">
+          <label for="fGuests">Guests</label>
+          <input type="number" id="fGuests" name="guests" min="1" max="20" value="2" />
+        </div>
+        <div class="field field-wide">
+          <label for="fMessage">Message <span class="opt">(optional)</span></label>
+          <textarea id="fMessage" name="message" rows="4" placeholder="Tell us a little about your trip…"></textarea>
+        </div>
+        <div class="field field-wide">
+          <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
+          <p class="form-hint">This opens your email app with the details pre-filled.</p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== LOCATION ===================== -->
+  <section class="section location alt" id="location">
+    <div class="container location-inner">
+      <div class="location-text">
+        <p class="eyebrow">Location</p>
+        <h2 class="section-title">The Western Algarve</h2>
+        <p class="lede" data-villa-location-long>
+          Praia da Luz, Lagos — Western Algarve, Portugal
+        </p>
+        <p>
+          A tranquil setting of golden cliffs, hidden coves and whitewashed
+          villages, yet moments from the restaurants and marina of historic Lagos.
+        </p>
+        <ul class="highlights" id="highlights"></ul>
+      </div>
+      <div class="location-map ph" data-tone="b">
+        <span class="ph-label">Map placeholder — add an embedded map here</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TESTIMONIALS ===================== -->
+  <section class="section testimonials">
+    <div class="container narrow center">
+      <p class="eyebrow">Guest words</p>
+      <div class="testimonial-carousel" id="testimonials"></div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <p class="footer-brand" data-villa-name>Casa da Luz</p>
+        <p class="footer-loc" data-villa-location>Praia da Luz · Lagos</p>
+      </div>
+      <div class="footer-contact" id="footerContact"></div>
+      <div class="footer-links">
+        <a href="#availability">Availability</a>
+        <a href="#enquire">Enquire</a>
+        <a href="admin.html" class="owner-link">Owner login</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© <span id="year"></span> <span data-villa-name>Casa da Luz</span>. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

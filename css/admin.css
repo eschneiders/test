@@ -1,0 +1,140 @@
+/* ============================================================================
+   Owner panel styles (layered on top of styles.css)
+   ============================================================================ */
+
+.admin-body { background: var(--sand-2); }
+
+/* --- login ----------------------------------------------------------------- */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+  background:
+    linear-gradient(160deg, rgba(39,74,68,0.9), rgba(28,56,51,0.9)),
+    linear-gradient(135deg, #C9764F, #274A55);
+}
+.login-card {
+  width: 100%; max-width: 400px;
+  background: var(--sand);
+  border-radius: var(--radius);
+  padding: 2.6rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.login-card .field { text-align: left; margin: 1.4rem 0 0.4rem; }
+.login-title { font-family: var(--serif); font-size: 2.2rem; font-weight: 600; color: var(--pine); }
+.login-sub { color: var(--ink-soft); margin-top: 0.4rem; margin-bottom: 0.6rem; font-size: 0.95rem; }
+.login-error { color: var(--terra-dk); font-size: 0.85rem; margin: 0.6rem 0; }
+.login-card .btn { margin-top: 1.2rem; }
+.login-back { display: inline-block; margin-top: 1.4rem; font-size: 0.85rem; color: var(--ink-soft); }
+.login-back:hover { color: var(--ink); }
+
+/* --- panel chrome ---------------------------------------------------------- */
+
+.panel-header {
+  background: var(--pine-dk); color: #fff;
+  position: sticky; top: 0; z-index: 20;
+}
+.panel-header-inner { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; }
+.panel-brand { font-family: var(--serif); font-size: 1.4rem; color: #fff; }
+.panel-tag {
+  font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.25);
+  padding: 0.25rem 0.6rem; border-radius: 100px;
+}
+.panel-actions { margin-left: auto; display: flex; gap: 0.6rem; }
+.btn-sm { padding: 0.6rem 1.1rem; font-size: 0.72rem; }
+.panel-header .btn-outline { border-color: rgba(255,255,255,0.4); color: #fff; }
+.panel-header .btn-outline:hover { background: rgba(255,255,255,0.12); }
+
+.panel-main { padding: 2.5rem 0 4rem; display: grid; gap: 1.6rem; }
+
+/* --- cards ------------------------------------------------------------------ */
+
+.card {
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.8rem;
+}
+.card h2 { font-family: var(--serif); font-weight: 500; font-size: 1.6rem; color: var(--pine); }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.muted { color: var(--ink-soft); font-size: 0.92rem; margin-top: 0.3rem; }
+.muted.small { font-size: 0.82rem; color: var(--ink-mute); margin-top: 0.8rem; }
+code { background: var(--sand-2); padding: 0.1rem 0.4rem; border-radius: 5px; font-size: 0.85em; }
+
+.filter {
+  font-family: var(--sans); font-size: 0.9rem;
+  padding: 0.6rem 0.9rem; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--sand); min-width: 200px;
+}
+.filter:focus { outline: none; border-color: var(--pine); }
+
+/* --- season rates ---------------------------------------------------------- */
+
+.rate-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.2rem; }
+.rate-row label { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.rate-row small { text-transform: none; letter-spacing: 0; color: var(--ink-mute); }
+.rate-row input {
+  font-family: var(--sans); font-size: 1.1rem; color: var(--pine); font-weight: 500;
+  padding: 0.7rem 0.8rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--sand);
+}
+.rate-row input:focus { outline: none; border-color: var(--pine); background: #fff; }
+
+/* --- weeks table ----------------------------------------------------------- */
+
+.week-table { margin-top: 1.4rem; display: grid; gap: 0.5rem; }
+.wk-month-head {
+  font-family: var(--serif); font-size: 1.15rem; color: var(--terra);
+  margin-top: 1rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
+}
+.wk-row {
+  display: grid;
+  grid-template-columns: 1fr 130px 190px;
+  align-items: center; gap: 1rem;
+  padding: 0.6rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+.status-toggle { justify-self: end; }
+.wk-row:hover { background: var(--sand); }
+.wk-row.is-booked { opacity: 0.72; }
+.wk-range { font-size: 0.95rem; }
+.wk-range .wk-key { display: block; font-size: 0.72rem; color: var(--ink-mute); }
+
+.price-input { display: flex; align-items: center; gap: 0.3rem; }
+.price-input span { color: var(--ink-mute); }
+.price-input input {
+  width: 100%; font-family: var(--sans); font-size: 0.95rem;
+  padding: 0.5rem 0.6rem; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--sand);
+}
+.price-input input:focus { outline: none; border-color: var(--pine); background: #fff; }
+.price-input input.custom { border-color: var(--gold); background: #FBF6E9; }
+
+.status-toggle {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 100px; overflow: hidden;
+}
+.status-toggle button {
+  border: none; background: var(--sand); cursor: pointer;
+  font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 0.5rem 0.7rem; color: var(--ink-soft);
+  transition: background 0.2s, color 0.2s;
+}
+.status-toggle button.on-avail { background: var(--pine); color: #fff; }
+.status-toggle button.on-booked { background: var(--terra); color: #fff; }
+
+/* --- publish --------------------------------------------------------------- */
+
+.publish-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1.2rem; }
+.btn.danger { color: var(--terra-dk); border-color: #E5C4B7; }
+.btn.danger:hover { background: #F6E5DE; }
+.publish-out {
+  width: 100%; margin-top: 1rem; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem; color: var(--ink-soft); background: var(--sand);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem;
+  resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .wk-row { grid-template-columns: 1fr; gap: 0.5rem; }
+  .rate-row { grid-template-columns: 1fr; }
+}

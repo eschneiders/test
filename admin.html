@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner panel — Casa da Luz</title>
+  <meta name="robots" content="noindex" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <p class="eyebrow">Owner access</p>
+      <h1 class="login-title" data-villa-name>Casa da Luz</h1>
+      <p class="login-sub">Sign in to manage availability &amp; rates.</p>
+      <div class="field">
+        <label for="pw">Password</label>
+        <input type="password" id="pw" autocomplete="current-password" required />
+      </div>
+      <p class="login-error" id="loginError" hidden>Incorrect password.</p>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      <a href="index.html" class="login-back">← Back to site</a>
+    </form>
+  </div>
+
+  <!-- PANEL -->
+  <div class="panel" id="panel" hidden>
+    <header class="panel-header">
+      <div class="container panel-header-inner">
+        <span class="panel-brand" data-villa-name>Casa da Luz</span>
+        <span class="panel-tag">Owner panel</span>
+        <div class="panel-actions">
+          <a href="index.html" target="_blank" class="btn btn-outline btn-sm">View site ↗</a>
+          <button class="btn btn-outline btn-sm" id="logoutBtn">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container panel-main">
+
+      <!-- season rates -->
+      <section class="card">
+        <h2>Default seasonal rates</h2>
+        <p class="muted">Applied to any week you haven't given a custom price. Weekly, in euros.</p>
+        <div class="rate-row">
+          <label>High <small>(Jul–Aug)</small><input type="number" id="rateHigh" /></label>
+          <label>Mid <small>(May,Jun,Sep,Oct)</small><input type="number" id="rateMid" /></label>
+          <label>Low <small>(Nov–Apr)</small><input type="number" id="rateLow" /></label>
+        </div>
+        <p class="muted small">Tip: season rates are set in <code>js/data.js</code> and take effect for everyone when you publish. Editing here previews on this device.</p>
+      </section>
+
+      <!-- weeks table -->
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>Weeks</h2>
+            <p class="muted">Toggle each week booked/available and set a custom price. Changes save automatically on this device.</p>
+          </div>
+          <input type="search" id="weekFilter" placeholder="Filter by month…" class="filter" />
+        </div>
+        <div class="week-table" id="weekTable"></div>
+      </section>
+
+      <!-- publish -->
+      <section class="card publish">
+        <h2>Make changes visible to visitors</h2>
+        <p class="muted">
+          Your edits are saved in this browser so you can preview instantly. To show them
+          to visitors on every device, publish: copy the data below into
+          <code>js/data.js</code> (or download it) and re-upload your site.
+          <a href="#" id="whyLink">Why?</a>
+        </p>
+        <p class="muted small" id="whyText" hidden>
+          This is a static site with no server, so there's no shared database. That keeps
+          it free and fast to host — the trade-off is that publishing changes means updating
+          the site's files. Ask your developer to wire up a backend if you'd like edits to
+          go live automatically.
+        </p>
+        <div class="publish-actions">
+          <button class="btn btn-terra btn-sm" id="copyBtn">Copy data</button>
+          <button class="btn btn-outline btn-sm" id="downloadBtn">Download JSON</button>
+          <button class="btn btn-outline btn-sm danger" id="resetBtn">Reset all changes</button>
+        </div>
+        <textarea class="publish-out" id="publishOut" readonly rows="6"></textarea>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
