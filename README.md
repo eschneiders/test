@@ -69,10 +69,14 @@ step to add.
 
 ## Booking enquiries
 
-When a guest picks a week and submits the form, their email app opens with the
-details pre-filled, addressed to your `ownerEmail`. No third-party service or
-signup required. (If you'd prefer enquiries to arrive without the guest needing
-an email app, a form service like Formspree can be dropped in later.)
+When a guest picks a week and submits the form, the enquiry is sent through
+**Netlify Forms**: it's saved in your Netlify dashboard and (once you switch on
+notifications) emailed straight to you — the guest doesn't need an email app.
+See `DEPLOY.md` for the one-minute step to enable email notifications.
+
+If the site is ever opened somewhere without Netlify Forms (e.g. a plain local
+file), the form automatically falls back to opening the guest's email app with
+the details pre-filled, addressed to your `ownerEmail`.
 
 ## A note on the owner password
 
@@ -83,5 +87,7 @@ login; happy to set that up if you want it.
 
 ## Hosting
 
-Any static host works and most are free: GitHub Pages, Netlify, Cloudflare
-Pages, or Vercel. Upload the whole folder and you're live.
+This site is set up for **Netlify** (free tier) — see **`DEPLOY.md`** for the
+short step-by-step. It auto-redeploys whenever code is pushed to the connected
+branch. Any other static host (GitHub Pages, Cloudflare Pages, Vercel) also
+works, though the built-in enquiry-form capture is a Netlify feature.

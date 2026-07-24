@@ -133,7 +133,11 @@
         <button type="button" class="sw-clear" id="clearWeek" aria-label="Clear selection">×</button>
       </div>
 
-      <form class="enquiry-form" id="enquiryForm">
+      <form class="enquiry-form" id="enquiryForm" name="enquiry" method="POST"
+            data-netlify="true" netlify-honeypot="bot-field">
+        <!-- Netlify Forms: identifies this submission + a spam honeypot. -->
+        <input type="hidden" name="form-name" value="enquiry" />
+        <p class="hp" aria-hidden="true"><label>Leave this empty <input name="bot-field" /></label></p>
         <div class="field">
           <label for="fName">Full name</label>
           <input type="text" id="fName" name="name" required />
@@ -156,9 +160,16 @@
         </div>
         <div class="field field-wide">
           <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
-          <p class="form-hint">This opens your email app with the details pre-filled.</p>
+          <p class="form-hint">We'll reply by email to confirm availability and the final price.</p>
         </div>
       </form>
+
+      <div class="form-success" id="formSuccess" hidden>
+        <div class="fs-mark">✓</div>
+        <h3>Thank you — your enquiry is on its way</h3>
+        <p>We've received your request and will be in touch by email shortly to
+           confirm availability and pricing. We look forward to welcoming you.</p>
+      </div>
     </div>
   </section>
 

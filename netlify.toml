@@ -1,0 +1,11 @@
+# Netlify configuration for Casa da Luz (static site — no build step needed).
+# The whole repo root is published as-is.
+
+[build]
+  publish = "."
+
+# Nice, clean URLs and a sensible cache for static assets.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

@@ -186,28 +186,54 @@ function clearSelection() {
 function initForm() {
   document.getElementById("clearWeek").addEventListener("click", clearSelection);
 
-  document.getElementById("enquiryForm").addEventListener("submit", e => {
+  const form = document.getElementById("enquiryForm");
+  form.addEventListener("submit", async e => {
     e.preventDefault();
-    const f = e.target;
-    const name = f.name.value.trim();
-    const email = f.email.value.trim();
-    const guests = f.guests.value;
-    const message = f.message.value.trim();
-    const weekText = f.week.selectedOptions[0]?.text || "Flexible";
 
-    const subject = `Booking enquiry — ${VILLA.name}`;
-    const body =
-      `Hello,\n\nI'd like to enquire about staying at ${VILLA.name}.\n\n` +
-      `Name: ${name}\n` +
-      `Email: ${email}\n` +
-      `Preferred week: ${weekText}\n` +
-      `Guests: ${guests}\n\n` +
-      `${message || "(no message)"}\n\n` +
-      `Sent from the ${VILLA.name} website.`;
+    // Capture the human-readable week text rather than the internal key.
+    const weekSel = document.getElementById("fWeek");
+    const weekText = weekSel.selectedOptions[0]?.text || "Flexible / not sure yet";
+    const data = new FormData(form);
+    data.set("week", weekText);
 
-    window.location.href =
-      `mailto:${VILLA.ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Primary path: hand the enquiry to Netlify Forms (captured + emailed to
+    // the owner, no email app required). If that isn't available — e.g. opened
+    // locally or hosted somewhere without Forms — fall back to a mailto.
+    try {
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(data).toString(),
+      });
+      if (!res.ok) throw new Error("form endpoint unavailable");
+      showSuccess();
+    } catch (err) {
+      openMailto(weekText);
+    }
   });
+}
+
+function showSuccess() {
+  const form = document.getElementById("enquiryForm");
+  form.hidden = true;
+  document.getElementById("selectedWeek").hidden = true;
+  document.getElementById("formSuccess").hidden = false;
+  document.getElementById("formSuccess").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function openMailto(weekText) {
+  const val = id => document.getElementById(id).value.trim();
+  const subject = `Booking enquiry — ${VILLA.name}`;
+  const body =
+    `Hello,\n\nI'd like to enquire about staying at ${VILLA.name}.\n\n` +
+    `Name: ${val("fName")}\n` +
+    `Email: ${val("fEmail")}\n` +
+    `Preferred week: ${weekText}\n` +
+    `Guests: ${val("fGuests")}\n\n` +
+    `${val("fMessage") || "(no message)"}\n\n` +
+    `Sent from the ${VILLA.name} website.`;
+  window.location.href =
+    `mailto:${VILLA.ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 /* --- header + mobile nav --------------------------------------------------- */
