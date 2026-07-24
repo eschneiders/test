@@ -4,6 +4,14 @@ A fast, elegant one-page website to advertise a luxury holiday home and take
 booking enquiries, with a private owner panel for managing availability and
 prices. Pure HTML/CSS/JavaScript — no build step, no server, no monthly fees.
 
+**Highlights**
+- **Flexible dates** — guests pick any check-in and check-out (not fixed weeks),
+  with a live price quote and booked nights blocked out.
+- **Four languages** — English, Portuguese, French, German, with a switcher.
+  Dates and prices format automatically for each language.
+- **Owner panel** — block date ranges, set seasonal nightly rates and custom
+  prices, all from `/admin.html`.
+
 ## What's here
 
 | File | What it is |
@@ -12,8 +20,9 @@ prices. Pure HTML/CSS/JavaScript — no build step, no server, no monthly fees.
 | `admin.html` | Private owner login & booking manager (`/admin.html`) |
 | `css/styles.css` | All public-site styling |
 | `css/admin.css` | Owner-panel styling |
-| `js/data.js` | **Your content** — villa name, prices, photos, contact |
-| `js/calendar.js` | Availability engine (shared) |
+| `js/data.js` | **Your facts** — villa name, email, nightly rates, photos |
+| `js/i18n.js` | **Translations** — all wording, in 4 languages |
+| `js/calendar.js` | Availability engine (per-night, shared) |
 | `js/main.js` | Public-site behaviour |
 | `js/admin.js` | Owner-panel behaviour |
 | `assets/` | Drop your photos here |
@@ -27,9 +36,17 @@ prices. Pure HTML/CSS/JavaScript — no build step, no server, no monthly fees.
 
 ## Making it yours
 
-**Text & prices** — everything you'd normally change lives at the top of
-`js/data.js` (villa name, tagline, location, `ownerEmail`, `stats`,
-`seasonRates`, amenities, highlights, testimonials).
+**Facts & prices** — the top of `js/data.js` holds the villa name, location,
+`ownerEmail` (where enquiries go), `stats`, nightly `seasonRates`, `minNights`,
+and the photo slots.
+
+**Wording & translations** — all visible text lives in `js/i18n.js`, with an
+`en` / `pt` / `fr` / `de` block each. Edit a phrase in the language you want, or
+add a new language by copying a block. Month names, weekdays and currency format
+themselves per language.
+
+**Managing bookings & prices** — use the owner panel (below); no need to edit
+code for day-to-day availability.
 
 **Photos** — the gallery and hero currently show styled placeholders. To use a
 real photo, drop it into `assets/` and set its path on the matching slide in
@@ -52,9 +69,11 @@ Go to **`/admin.html`** and sign in with the password from `js/data.js`
 
 From there you can:
 
-- Mark any week **Available** or **Booked**.
-- Set a **custom price** for any week (blank = the seasonal default).
-- Preview seasonal rates.
+- **Block date ranges** — enter a first night and checkout day to mark those
+  nights unavailable (the checkout day stays bookable). Remove any block later.
+- **Set nightly rates** per season (high / mid / low).
+- **Add custom pricing** for a specific date range (e.g. a special week).
+- **Preview** how the calendar looks to guests.
 
 Changes save instantly **in your browser**, so you can preview them right away.
 
@@ -69,10 +88,12 @@ step to add.
 
 ## Booking enquiries
 
-When a guest picks a week and submits the form, the enquiry is sent through
+When a guest picks their dates and submits the form, the enquiry — including the
+chosen check-in/check-out, number of nights and estimated total — is sent through
 **Netlify Forms**: it's saved in your Netlify dashboard and (once you switch on
-notifications) emailed straight to you — the guest doesn't need an email app.
-See `DEPLOY.md` for the one-minute step to enable email notifications.
+notifications) emailed straight to **mpschneiders@gmail.com** — the guest doesn't
+need an email app. See `DEPLOY.md` for the one-minute step to enable email
+notifications.
 
 If the site is ever opened somewhere without Netlify Forms (e.g. a plain local
 file), the form automatically falls back to opening the guest's email app with

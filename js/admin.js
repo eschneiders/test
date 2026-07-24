@@ -1,7 +1,7 @@
 /* ============================================================================
-   Owner panel behaviour — login, editing weeks/rates, and publishing.
-   Edits are stored in localStorage (this browser). "Publish" produces a data
-   snapshot to paste into js/data.js so changes reach every visitor.
+   Owner panel — manage nightly rates, blocked date ranges and custom pricing.
+   State is shared with the public site via calendar.js (loadState/saveState).
+   Edits persist in this browser; "Publish" exports them for the live site.
    ============================================================================ */
 
 const SESSION_KEY = "villa.admin.session";
@@ -10,15 +10,11 @@ const SESSION_KEY = "villa.admin.session";
 
 function initLogin() {
   document.querySelectorAll("[data-villa-name]").forEach(el => el.textContent = VILLA.name);
-
-  // stay logged in for the browser session
   if (sessionStorage.getItem(SESSION_KEY) === "1") return openPanel();
 
-  const form = document.getElementById("loginForm");
-  form.addEventListener("submit", e => {
+  document.getElementById("loginForm").addEventListener("submit", e => {
     e.preventDefault();
-    const pw = document.getElementById("pw").value;
-    if (pw === VILLA.adminPassword) {
+    if (document.getElementById("pw").value === VILLA.adminPassword) {
       sessionStorage.setItem(SESSION_KEY, "1");
       openPanel();
     } else {
@@ -33,6 +29,22 @@ function openPanel() {
   initPanel();
 }
 
+/* --- state helpers --------------------------------------------------------- */
+
+// Until the owner saves anything, start from a clean slate (no demo bookings).
+function currentState() {
+  if (hasOwnerData()) return loadState();
+  return { bookedRanges: [], priceRanges: [], nightlyRates: { ...VILLA.nightlyRates } };
+}
+
+function commit(state) {
+  // normalise: sort ranges by start
+  state.bookedRanges.sort((a, b) => a.start.localeCompare(b.start));
+  state.priceRanges.sort((a, b) => a.start.localeCompare(b.start));
+  saveState(state);
+  renderAll();
+}
+
 /* --- panel ----------------------------------------------------------------- */
 
 function initPanel() {
@@ -41,116 +53,131 @@ function initPanel() {
     location.reload();
   });
 
-  // season rate inputs (preview only, on this device)
-  const rates = { high: "rateHigh", mid: "rateMid", low: "rateLow" };
-  Object.entries(rates).forEach(([k, id]) => {
-    const input = document.getElementById(id);
-    input.value = VILLA.seasonRates[k];
-    input.addEventListener("input", () => {
-      const v = Number(input.value);
-      if (!Number.isNaN(v) && v > 0) { VILLA.seasonRates[k] = v; renderWeeks(); refreshPublish(); }
+  // nightly rates
+  const rateIds = { high: "rateHigh", mid: "rateMid", low: "rateLow" };
+  Object.entries(rateIds).forEach(([k, id]) => {
+    document.getElementById(id).addEventListener("input", e => {
+      const v = Number(e.target.value);
+      if (Number.isNaN(v) || v <= 0) return;
+      const s = currentState();
+      s.nightlyRates[k] = v;
+      commit(s);
     });
   });
 
-  document.getElementById("weekFilter").addEventListener("input", renderWeeks);
+  document.getElementById("blockAdd").addEventListener("click", addBlock);
+  document.getElementById("priceAdd").addEventListener("click", addPrice);
 
-  // publish controls
   document.getElementById("whyLink").addEventListener("click", e => {
     e.preventDefault();
-    const t = document.getElementById("whyText");
-    t.hidden = !t.hidden;
+    const t = document.getElementById("whyText"); t.hidden = !t.hidden;
   });
   document.getElementById("copyBtn").addEventListener("click", copyData);
   document.getElementById("downloadBtn").addEventListener("click", downloadData);
   document.getElementById("resetBtn").addEventListener("click", resetAll);
 
-  renderWeeks();
-  refreshPublish();
+  // sensible date input minimums (today)
+  const todayKey = keyOf(today());
+  ["blockFrom","blockTo","priceFrom","priceTo"].forEach(id => document.getElementById(id).min = todayKey);
+
+  renderAll();
 }
 
-/* --- render editable weeks ------------------------------------------------- */
-
-function renderWeeks() {
-  const filter = document.getElementById("weekFilter").value.trim().toLowerCase();
-  const weeks = buildWeeks();
-  const groups = groupByMonth(weeks);
-  const table = document.getElementById("weekTable");
-
-  let html = "";
-  for (const g of groups) {
-    if (filter && !g.label.toLowerCase().includes(filter)) continue;
-    html += `<div class="wk-month-head">${g.label}</div>`;
-    for (const w of g.weeks) {
-      const booked = w.status === "booked";
-      html += `
-        <div class="wk-row ${booked ? "is-booked" : ""}" data-key="${w.key}">
-          <div class="wk-range">${weekLabel(w)}<span class="wk-key">${w.key}</span></div>
-          <div class="price-input">
-            <span>€</span>
-            <input type="number" class="wk-price-in ${w.custom ? "custom" : ""}"
-                   value="${w.custom ? w.price : ""}" placeholder="${defaultPriceFor(w.start)}" data-key="${w.key}" />
-          </div>
-          <div class="status-toggle" data-key="${w.key}">
-            <button type="button" data-status="available" class="${!booked ? "on-avail" : ""}">Available</button>
-            <button type="button" data-status="booked" class="${booked ? "on-booked" : ""}">Booked</button>
-          </div>
-        </div>`;
-    }
-  }
-  table.innerHTML = html || `<p class="muted">No weeks match “${filter}”.</p>`;
-
-  // wire price inputs
-  table.querySelectorAll(".wk-price-in").forEach(inp => {
-    inp.addEventListener("change", () => setPrice(inp.dataset.key, inp.value));
-  });
-  // wire status toggles
-  table.querySelectorAll(".status-toggle button").forEach(btn => {
-    btn.addEventListener("click", () => setStatus(btn.parentElement.dataset.key, btn.dataset.status));
-  });
+function renderAll() {
+  const s = currentState();
+  document.getElementById("rateHigh").value = s.nightlyRates.high;
+  document.getElementById("rateMid").value  = s.nightlyRates.mid;
+  document.getElementById("rateLow").value  = s.nightlyRates.low;
+  renderBookedList(s);
+  renderPriceList(s);
+  renderPreview(s);
+  document.getElementById("publishOut").value = JSON.stringify(s, null, 2);
 }
 
-/* --- mutations ------------------------------------------------------------- */
+/* --- blocked ranges -------------------------------------------------------- */
 
-function updateOverride(key, patch) {
-  const o = loadOverrides();
-  o[key] = { ...(o[key] || {}), ...patch };
-  // prune empty entries
-  if (o[key].price == null || o[key].price === "") delete o[key].price;
-  if (!o[key].status) delete o[key].status;
-  if (Object.keys(o[key]).length === 0) delete o[key];
-  saveOverrides(o);
-  renderWeeks();
-  refreshPublish();
+function addBlock() {
+  const from = document.getElementById("blockFrom").value;
+  const to   = document.getElementById("blockTo").value;
+  const err  = document.getElementById("blockError");
+  if (!from || !to) return showErr(err, "Please choose both dates.");
+  if (to <= from)   return showErr(err, "The checkout date must be after the first night.");
+  err.hidden = true;
+
+  const s = currentState();
+  s.bookedRanges.push({ start: from, end: to });
+  commit(s);
+  document.getElementById("blockFrom").value = "";
+  document.getElementById("blockTo").value = "";
 }
 
-function setPrice(key, value) {
-  const v = value === "" ? "" : Number(value);
-  updateOverride(key, { price: v === "" || Number.isNaN(v) ? "" : v });
+function renderBookedList(s) {
+  const list = document.getElementById("bookedList");
+  if (!s.bookedRanges.length) { list.innerHTML = `<li class="range-empty">No blocked dates yet.</li>`; return; }
+  list.innerHTML = s.bookedRanges.map((r, i) => {
+    const n = daysBetween(parseKey(r.start), parseKey(r.end));
+    return `<li>
+      <span>${fmtDate(parseKey(r.start))} → ${fmtDate(parseKey(r.end))} <em>(${n} night${n===1?"":"s"})</em></span>
+      <button type="button" data-i="${i}" class="range-remove" aria-label="Remove">Unblock</button>
+    </li>`;
+  }).join("");
+  list.querySelectorAll(".range-remove").forEach(b => b.addEventListener("click", () => {
+    const s2 = currentState(); s2.bookedRanges.splice(Number(b.dataset.i), 1); commit(s2);
+  }));
 }
 
-function setStatus(key, status) {
-  updateOverride(key, { status });
+/* --- custom price ranges --------------------------------------------------- */
+
+function addPrice() {
+  const from = document.getElementById("priceFrom").value;
+  const to   = document.getElementById("priceTo").value;
+  const val  = Number(document.getElementById("priceVal").value);
+  const err  = document.getElementById("priceError");
+  if (!from || !to) return showErr(err, "Please choose both dates.");
+  if (to <= from)   return showErr(err, "The end date must be after the start date.");
+  if (!val || val <= 0) return showErr(err, "Please enter a nightly price.");
+  err.hidden = true;
+
+  const s = currentState();
+  s.priceRanges.push({ start: from, end: to, nightly: val });
+  commit(s);
+  ["priceFrom","priceTo","priceVal"].forEach(id => document.getElementById(id).value = "");
+}
+
+function renderPriceList(s) {
+  const list = document.getElementById("priceList");
+  if (!s.priceRanges.length) { list.innerHTML = `<li class="range-empty">No custom prices — seasonal rates apply.</li>`; return; }
+  const fmt = moneyFmt("en");
+  list.innerHTML = s.priceRanges.map((r, i) => `
+    <li>
+      <span>${fmtDate(parseKey(r.start))} → ${fmtDate(parseKey(r.end))} · <strong>${fmt.format(r.nightly)}</strong> / night</span>
+      <button type="button" data-i="${i}" class="range-remove" aria-label="Remove">Remove</button>
+    </li>`).join("");
+  list.querySelectorAll(".range-remove").forEach(b => b.addEventListener("click", () => {
+    const s2 = currentState(); s2.priceRanges.splice(Number(b.dataset.i), 1); commit(s2);
+  }));
+}
+
+/* --- read-only preview ----------------------------------------------------- */
+
+function renderPreview(s) {
+  const months = buildMonths(6);
+  const wk = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+  document.getElementById("preview").innerHTML = months.map(mo => {
+    const title = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(mo.year, mo.month, 1));
+    const cells = mo.cells.map(c => {
+      if (!c) return `<span class="day empty"></span>`;
+      const booked = isNightBooked(c.date, s);
+      const cls = c.past ? "is-past" : booked ? "is-booked" : "is-open";
+      return `<span class="day ${cls}">${c.date.getDate()}</span>`;
+    }).join("");
+    return `<div class="cal-month"><h3>${title}</h3>
+      <div class="cal-dow">${wk.map(d => `<span>${d}</span>`).join("")}</div>
+      <div class="cal-grid">${cells}</div></div>`;
+  }).join("");
 }
 
 /* --- publish / export ------------------------------------------------------ */
-
-function exportSnapshot() {
-  // Only export weeks that differ from defaults, keyed by date.
-  return {
-    seasonRates: { ...VILLA.seasonRates },
-    overrides: loadOverrides(),
-    exportedAt: new Date().toISOString(),
-  };
-}
-
-function snapshotText() {
-  const snap = exportSnapshot();
-  return JSON.stringify(snap, null, 2);
-}
-
-function refreshPublish() {
-  document.getElementById("publishOut").value = snapshotText();
-}
 
 function copyData() {
   const ta = document.getElementById("publishOut");
@@ -162,21 +189,22 @@ function copyData() {
 }
 
 function downloadData() {
-  const blob = new Blob([snapshotText()], { type: "application/json" });
+  const blob = new Blob([document.getElementById("publishOut").value], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "villa-availability.json";
-  a.click();
+  a.href = url; a.download = "villa-availability.json"; a.click();
   URL.revokeObjectURL(url);
 }
 
 function resetAll() {
   if (!confirm("Reset all availability and price changes on this device?")) return;
-  localStorage.removeItem(OVERRIDE_KEY);
-  renderWeeks();
-  refreshPublish();
+  localStorage.removeItem(STATE_KEY);
+  renderAll();
 }
+
+/* --- utilities ------------------------------------------------------------- */
+
+function showErr(el, msg) { el.textContent = msg; el.hidden = false; }
 
 function flash(id, text) {
   const btn = document.getElementById(id);
@@ -184,7 +212,5 @@ function flash(id, text) {
   btn.textContent = text;
   setTimeout(() => (btn.textContent = old), 1600);
 }
-
-/* --- boot ------------------------------------------------------------------ */
 
 document.addEventListener("DOMContentLoaded", initLogin);

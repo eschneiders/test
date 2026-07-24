@@ -1,139 +1,135 @@
 /* ============================================================================
-   Availability engine — shared by the public site (main.js) and the owner
-   panel (admin.js).
+   Availability engine (per-night) — shared by the public site and owner panel.
 
    Model
    -----
-   • The season is a list of weeks. Each week starts on the changeover day
-     (Saturday by default) and lasts 7 nights.
-   • A week is identified by the ISO date of its start (YYYY-MM-DD) — its "key".
-   • For every week we can know two things: its PRICE and its STATUS
-     ("available" | "booked").
-   • Defaults come from VILLA.seasonRates (+ the demo booked weeks). The owner
-     can override any week's price/status; overrides are stored in the browser
-     under OVERRIDE_KEY and merged on top of the defaults.
+   • Guests choose any check-in and check-out date. A stay covers the NIGHTS
+     from check-in up to (not including) check-out.
+   • Unavailability is stored as a list of booked ranges {start, end}, where the
+     booked nights are [start, end) — so `end` is a checkout day and remains
+     bookable as someone else's check-in.
+   • Pricing is per night: a night's price is the owner's custom price if it
+     falls in a price range, otherwise the seasonal nightly rate for its month.
+   • Owner edits (booked ranges, price ranges, nightly rates) are stored in the
+     browser under STATE_KEY and override the defaults.
    ============================================================================ */
 
-const OVERRIDE_KEY = "villa.availability.v1";
-
-const money = new Intl.NumberFormat("en-GB", {
-  style: "currency", currency: "EUR", maximumFractionDigits: 0,
-});
+const STATE_KEY = "villa.availability.v2";
 
 /* --- date helpers ---------------------------------------------------------- */
 
-function startOfDay(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-// The changeover day (Saturday) on or before `date`.
-function weekStart(date) {
-  const d = startOfDay(date);
-  const diff = (d.getDay() - VILLA.changeoverDay + 7) % 7;
-  d.setDate(d.getDate() - diff);
-  return d;
-}
-
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
+function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function today()       { return startOfDay(new Date()); }
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
 
 function keyOf(date) {
   const d = startOfDay(date);
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function parseKey(key) { const [y,m,d] = key.split("-").map(Number); return new Date(y, m-1, d); }
+function daysBetween(a, b) { return Math.round((startOfDay(b) - startOfDay(a)) / 86400000); }
+
+/* Locale-aware date formatting (falls back gracefully). */
+function fmtDate(date, lang = (typeof getLang === "function" ? getLang() : "en")) {
+  const loc = (typeof LOCALE !== "undefined" && LOCALE[lang]) || "en-GB";
+  return new Intl.DateTimeFormat(loc, { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+function fmtRange(checkIn, checkOut, lang) {
+  return `${fmtDate(checkIn, lang)} → ${fmtDate(checkOut, lang)}`;
 }
 
-const MONTHS = ["January","February","March","April","May","June",
-                "July","August","September","October","November","December"];
+/* --- season / default nightly pricing -------------------------------------- */
 
-function fmtDay(date)   { return date.getDate(); }
-function fmtShort(date) { return `${date.getDate()} ${MONTHS[date.getMonth()].slice(0,3)}`; }
-
-// "Sat 5 Jul – Sat 12 Jul 2026"
-function weekLabel(week) {
-  const s = week.start, e = week.end;
-  const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  return `${dow[s.getDay()]} ${fmtShort(s)} – ${dow[e.getDay()]} ${fmtShort(e)} ${e.getFullYear()}`;
+function seasonForMonth(m) {
+  if (m === 6 || m === 7) return "high";        // Jul, Aug
+  if ([4,5,8,9].includes(m)) return "mid";      // May, Jun, Sep, Oct
+  return "low";                                 // Nov–Apr
 }
 
-/* --- season / default pricing --------------------------------------------- */
+/* --- persisted state ------------------------------------------------------- */
 
-function seasonForMonth(monthIndex) {
-  if (monthIndex === 6 || monthIndex === 7) return "high";            // Jul, Aug
-  if ([4, 5, 8, 9].includes(monthIndex))    return "mid";             // May,Jun,Sep,Oct
-  return "low";                                                       // Nov–Apr
+function hasOwnerData() { return localStorage.getItem(STATE_KEY) !== null; }
+
+function demoBookedRanges() {
+  const base = today();
+  return DEMO_BOOKED_OFFSETS.map(o => ({
+    start: keyOf(addDays(base, o.startIn)),
+    end:   keyOf(addDays(base, o.startIn + o.nights)),
+  }));
 }
 
-function defaultPriceFor(date) {
-  return VILLA.seasonRates[seasonForMonth(date.getMonth())];
+function loadState() {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(STATE_KEY)); } catch { stored = null; }
+  return {
+    bookedRanges: stored?.bookedRanges ?? demoBookedRanges(),
+    priceRanges:  stored?.priceRanges  ?? [],
+    nightlyRates: { ...VILLA.nightlyRates, ...(stored?.nightlyRates || {}) },
+  };
 }
 
-/* --- overrides (owner edits) ---------------------------------------------- */
-
-function loadOverrides() {
-  try { return JSON.parse(localStorage.getItem(OVERRIDE_KEY)) || {}; }
-  catch { return {}; }
+function saveState(state) {
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
 }
 
-function saveOverrides(obj) {
-  localStorage.setItem(OVERRIDE_KEY, JSON.stringify(obj));
+/* --- availability & pricing queries ---------------------------------------- */
+
+// Is the NIGHT beginning on `date` booked? (date in some [start, end))
+function isNightBooked(date, state) {
+  const d = startOfDay(date);
+  return state.bookedRanges.some(r => {
+    const s = parseKey(r.start), e = parseKey(r.end);
+    return d >= s && d < e;
+  });
 }
 
-// Has the owner ever saved anything? If so we ignore the demo booked weeks.
-function hasOwnerData() {
-  return localStorage.getItem(OVERRIDE_KEY) !== null;
-}
-
-/* --- the week list --------------------------------------------------------- */
-
-// Build the list of upcoming weeks with merged price + status.
-function buildWeeks() {
-  const overrides = loadOverrides();
-  const ownerActive = hasOwnerData();
-  const weeks = [];
-  let cursor = weekStart(new Date());
-
-  for (let i = 0; i < VILLA.weeksAhead; i++) {
-    const start = new Date(cursor);
-    const end = addDays(start, 7);            // next changeover day
-    const key = keyOf(start);
-
-    // Base defaults
-    let status = "available";
-    if (!ownerActive && DEMO_BOOKED_INDEXES.includes(i)) status = "booked";
-    let price = defaultPriceFor(start);
-    let custom = false;
-
-    // Apply owner overrides
-    const o = overrides[key];
-    if (o) {
-      if (o.status) status = o.status;
-      if (o.price != null && o.price !== "") { price = Number(o.price); custom = true; }
-    }
-
-    weeks.push({ key, index: i, start, end, price, status, custom });
-    cursor = addDays(cursor, 7);
+// Price of the NIGHT beginning on `date`.
+function nightlyPrice(date, state) {
+  const d = startOfDay(date);
+  for (const r of state.priceRanges) {
+    if (d >= parseKey(r.start) && d < parseKey(r.end)) return Number(r.nightly);
   }
-  return weeks;
+  return state.nightlyRates[seasonForMonth(d.getMonth())];
 }
 
-// Group weeks by the month/year of their start date, preserving order.
-function groupByMonth(weeks) {
-  const groups = [];
-  let current = null;
-  for (const w of weeks) {
-    const label = `${MONTHS[w.start.getMonth()]} ${w.start.getFullYear()}`;
-    if (!current || current.label !== label) {
-      current = { label, month: w.start.getMonth(), year: w.start.getFullYear(), weeks: [] };
-      groups.push(current);
-    }
-    current.weeks.push(w);
+// Every night in [checkIn, checkOut) available, and in the future?
+function isRangeAvailable(checkIn, checkOut, state) {
+  if (daysBetween(checkIn, checkOut) < 1) return false;
+  if (startOfDay(checkIn) < today()) return false;
+  for (let d = startOfDay(checkIn); d < startOfDay(checkOut); d = addDays(d, 1)) {
+    if (isNightBooked(d, state)) return false;
   }
-  return groups;
+  return true;
+}
+
+// { nights, total, avg } for a stay.
+function quote(checkIn, checkOut, state) {
+  let nights = 0, total = 0;
+  for (let d = startOfDay(checkIn); d < startOfDay(checkOut); d = addDays(d, 1)) {
+    nights++; total += nightlyPrice(d, state);
+  }
+  return { nights, total, avg: nights ? Math.round(total / nights) : 0 };
+}
+
+/* --- month grid for rendering (weeks start Monday) ------------------------- */
+
+function buildMonths(count, fromDate = today()) {
+  const months = [];
+  let y = fromDate.getFullYear(), m = fromDate.getMonth();
+  const firstToday = today();
+
+  for (let i = 0; i < count; i++) {
+    const first = new Date(y, m, 1);
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const lead = (first.getDay() + 6) % 7;           // Mon=0 … Sun=6
+    const cells = [];
+    for (let k = 0; k < lead; k++) cells.push(null);  // blanks before the 1st
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(y, m, day);
+      cells.push({ date, key: keyOf(date), past: startOfDay(date) < firstToday });
+    }
+    months.push({ year: y, month: m, cells });
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  return months;
 }

@@ -46,28 +46,49 @@
 
     <main class="container panel-main">
 
-      <!-- season rates -->
+      <!-- nightly rates -->
       <section class="card">
-        <h2>Default seasonal rates</h2>
-        <p class="muted">Applied to any week you haven't given a custom price. Weekly, in euros.</p>
+        <h2>Nightly rates</h2>
+        <p class="muted">Default price per night by season, applied to any night without a custom price.</p>
         <div class="rate-row">
           <label>High <small>(Jul–Aug)</small><input type="number" id="rateHigh" /></label>
           <label>Mid <small>(May,Jun,Sep,Oct)</small><input type="number" id="rateMid" /></label>
           <label>Low <small>(Nov–Apr)</small><input type="number" id="rateLow" /></label>
         </div>
-        <p class="muted small">Tip: season rates are set in <code>js/data.js</code> and take effect for everyone when you publish. Editing here previews on this device.</p>
       </section>
 
-      <!-- weeks table -->
+      <!-- block dates -->
       <section class="card">
-        <div class="card-head">
-          <div>
-            <h2>Weeks</h2>
-            <p class="muted">Toggle each week booked/available and set a custom price. Changes save automatically on this device.</p>
-          </div>
-          <input type="search" id="weekFilter" placeholder="Filter by month…" class="filter" />
+        <h2>Block dates</h2>
+        <p class="muted">Mark a stretch of nights as booked/unavailable. Enter the first night and the checkout day (the checkout day itself stays bookable).</p>
+        <div class="range-form">
+          <label>First night <input type="date" id="blockFrom" /></label>
+          <label>Checkout <input type="date" id="blockTo" /></label>
+          <button class="btn btn-terra btn-sm" id="blockAdd">Block these nights</button>
         </div>
-        <div class="week-table" id="weekTable"></div>
+        <p class="range-error" id="blockError" hidden></p>
+        <ul class="range-list" id="bookedList"></ul>
+      </section>
+
+      <!-- custom pricing -->
+      <section class="card">
+        <h2>Custom pricing <span class="opt-tag">optional</span></h2>
+        <p class="muted">Override the nightly price for a specific date range (e.g. a special week or event period).</p>
+        <div class="range-form">
+          <label>From <input type="date" id="priceFrom" /></label>
+          <label>To <input type="date" id="priceTo" /></label>
+          <label>€ / night <input type="number" id="priceVal" min="0" /></label>
+          <button class="btn btn-terra btn-sm" id="priceAdd">Add price</button>
+        </div>
+        <p class="range-error" id="priceError" hidden></p>
+        <ul class="range-list" id="priceList"></ul>
+      </section>
+
+      <!-- preview -->
+      <section class="card">
+        <h2>Preview</h2>
+        <p class="muted">How your calendar looks to guests over the coming months.</p>
+        <div class="cal admin-preview" id="preview"></div>
       </section>
 
       <!-- publish -->
@@ -75,15 +96,15 @@
         <h2>Make changes visible to visitors</h2>
         <p class="muted">
           Your edits are saved in this browser so you can preview instantly. To show them
-          to visitors on every device, publish: copy the data below into
-          <code>js/data.js</code> (or download it) and re-upload your site.
+          to visitors on every device, publish: copy or download the data below and send it
+          to your developer (or paste it back here) to update the live site.
           <a href="#" id="whyLink">Why?</a>
         </p>
         <p class="muted small" id="whyText" hidden>
-          This is a static site with no server, so there's no shared database. That keeps
-          it free and fast to host — the trade-off is that publishing changes means updating
-          the site's files. Ask your developer to wire up a backend if you'd like edits to
-          go live automatically.
+          This is a static site with no server, so there's no shared database — which keeps
+          it free and fast to host. The trade-off is that publishing changes means updating
+          the site's files. A small backend can make edits go live automatically; ask your
+          developer if you'd like that.
         </p>
         <div class="publish-actions">
           <button class="btn btn-terra btn-sm" id="copyBtn">Copy data</button>
@@ -96,6 +117,7 @@
     </main>
   </div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/admin.js"></script>

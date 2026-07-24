@@ -1,5 +1,6 @@
 /* ============================================================================
-   Public site behaviour — content injection, carousels, calendar, enquiry form.
+   Public site behaviour — i18n, carousels, flexible date-range picker,
+   live price quote, and the enquiry form.
    ============================================================================ */
 
 /* --- tiny line-icon set for amenities -------------------------------------- */
@@ -14,54 +15,125 @@ const ICONS = {
   beach: '<svg viewBox="0 0 24 24"><path d="M4 20h16M12 20V9M12 9a6 6 0 0 1 8 3M12 9a6 6 0 0 0-8 3"/></svg>',
 };
 
-/* --- content injection ----------------------------------------------------- */
+let LANG = getLang();
+let sel = { checkIn: null, checkOut: null };   // Date objects
+let hoverKey = null;
 
-function injectContent() {
-  document.title = `${VILLA.name} — Luxury Algarve Villa`;
+/* --- boot ------------------------------------------------------------------ */
+
+document.addEventListener("DOMContentLoaded", () => {
+  setLang(LANG);
+  buildLangSwitch();
+  initHero();
+  initGallery();
+  initCalendarEvents();
+  initChrome();
+  initForm();
+  initTestimonialRotation();
+  renderAll();
+});
+
+/* --- render everything for the current language ---------------------------- */
+
+function renderAll() {
+  applyStatic();
+  renderStats();
+  renderAmenities();
+  renderHighlights();
+  renderTestimonials();
+  setGalleryCaptions();
+  renderFooterContact();
+  renderCalendar();
+  updateSelectionOutputs();
+}
+
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const v = t(el.getAttribute("data-i18n"));
+    if (v) el.textContent = v;
+  });
   document.querySelectorAll("[data-villa-name]").forEach(el => el.textContent = VILLA.name);
-  document.querySelectorAll("[data-villa-tagline]").forEach(el => el.textContent = VILLA.tagline);
   document.querySelectorAll("[data-villa-location]").forEach(el => el.textContent = VILLA.locationShort);
   document.querySelectorAll("[data-villa-location-long]").forEach(el => el.textContent = VILLA.locationLong);
 
-  // stats
-  const stats = document.getElementById("stats");
-  const items = [
-    { num: VILLA.stats.bedrooms,  lab: "Bedrooms" },
-    { num: VILLA.stats.bathrooms, lab: "Bathrooms" },
-    { num: VILLA.stats.sleeps,    lab: "Sleeps" },
-  ];
-  stats.innerHTML = items.map(i => `<li><span class="num">${i.num}</span><span class="lab">${i.lab}</span></li>`).join("");
+  document.getElementById("introLede").textContent = t("intro.lede").replace("%NAME%", VILLA.name);
+  const msg = document.getElementById("fMessage");
+  if (msg) msg.placeholder = t("enquire.messagePh");
 
-  // amenities
-  document.getElementById("amenityGrid").innerHTML = AMENITIES.map(a => `
-    <li class="amenity">
-      <div class="ic">${ICONS[a.icon] || ""}</div>
-      <h3>${a.title}</h3>
-      <p>${a.text}</p>
-    </li>`).join("");
-
-  // highlights
-  document.getElementById("highlights").innerHTML = HIGHLIGHTS.map(h => `
-    <li><span class="place">${h.place}</span><span class="detail">${h.detail}</span></li>`).join("");
-
-  // footer contact
-  const fc = document.getElementById("footerContact");
-  let contact = `<a href="mailto:${VILLA.ownerEmail}">${VILLA.ownerEmail}</a>`;
-  if (VILLA.phone && !VILLA.phone.includes("000 000 000")) {
-    contact += `<a href="tel:${VILLA.phone.replace(/\s/g,'')}">${VILLA.phone}</a>`;
-  }
-  fc.innerHTML = contact;
-
+  document.title = `${VILLA.name} — Luxury Algarve Villa`;
   document.getElementById("year").textContent = new Date().getFullYear();
+}
+
+/* --- language switch ------------------------------------------------------- */
+
+function buildLangSwitch() {
+  const box = document.getElementById("langSwitch");
+  box.innerHTML = LANGS.map(l =>
+    `<button type="button" data-lang="${l}" class="${l === LANG ? "active" : ""}">${LANG_LABEL[l]}</button>`).join("");
+  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => changeLang(b.dataset.lang)));
+}
+
+function changeLang(l) {
+  if (l === LANG) return;
+  LANG = l;
+  setLang(l);
+  document.querySelectorAll("#langSwitch button").forEach(b => b.classList.toggle("active", b.dataset.lang === l));
+  renderAll();
+}
+
+/* --- content blocks -------------------------------------------------------- */
+
+function renderStats() {
+  const items = [
+    { num: VILLA.stats.bedrooms,  lab: t("stats.bedrooms") },
+    { num: VILLA.stats.bathrooms, lab: t("stats.bathrooms") },
+    { num: VILLA.stats.sleeps,    lab: t("stats.sleeps") },
+  ];
+  document.getElementById("stats").innerHTML =
+    items.map(i => `<li><span class="num">${i.num}</span><span class="lab">${i.lab}</span></li>`).join("");
+}
+
+function renderAmenities() {
+  document.getElementById("amenityGrid").innerHTML = AMENITY_KEYS.map(key => `
+    <li class="amenity">
+      <div class="ic">${ICONS[key] || ""}</div>
+      <h3>${t("amenities." + key + ".t")}</h3>
+      <p>${t("amenities." + key + ".d")}</p>
+    </li>`).join("");
+}
+
+function renderHighlights() {
+  const hl = t("location.highlights") || [];
+  document.getElementById("highlights").innerHTML = hl.map(h => `
+    <li><span class="place">${h.p}</span><span class="detail">${h.d}</span></li>`).join("");
+}
+
+function renderTestimonials() {
+  const wrap = document.getElementById("testimonials");
+  const items = t("testimonials.items") || [];
+  wrap.innerHTML = items.map((it, i) => `
+    <figure class="testimonial ${i === 0 ? "active" : ""}">
+      <blockquote>“${it.q}”</blockquote>
+      <figcaption class="who">${it.w}</figcaption>
+    </figure>`).join("");
+}
+
+function renderFooterContact() {
+  let html = `<a href="mailto:${VILLA.ownerEmail}">${VILLA.ownerEmail}</a>`;
+  if (VILLA.phone && !VILLA.phone.includes("000 000 000")) {
+    html += `<a href="tel:${VILLA.phone.replace(/\s/g,"")}">${VILLA.phone}</a>`;
+  }
+  document.getElementById("footerContact").innerHTML = html;
 }
 
 /* --- placeholder / image slide markup -------------------------------------- */
 
-function slideMarkup(slide, extraClass) {
+function slideMarkup(slide, extraClass, label) {
   if (slide.image) {
     return `<div class="${extraClass}" style="background:url('${slide.image}') center/cover"></div>`;
   }
-  return `<div class="${extraClass} ph" data-tone="${slide.tone}"><span class="ph-label">${slide.label}</span></div>`;
+  return `<div class="${extraClass} ph" data-tone="${slide.tone}"><span class="ph-label">${label || ""}</span></div>`;
 }
 
 /* --- hero carousel --------------------------------------------------------- */
@@ -95,12 +167,11 @@ function initGallery() {
   dots.innerHTML = slides.map((_, i) => `<button aria-label="Photo ${i+1}"></button>`).join("");
   const dotEls = [...dots.children];
 
-  const scrollTo = k => slides[k].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  dotEls.forEach((d, k) => d.addEventListener("click", () => scrollTo(k)));
+  dotEls.forEach((d, k) => d.addEventListener("click", () =>
+    slides[k].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })));
   document.getElementById("galPrev").addEventListener("click", () => track.scrollBy({ left: -track.clientWidth * 0.7, behavior: "smooth" }));
-  document.getElementById("galNext").addEventListener("click", () => track.scrollBy({ left: track.clientWidth * 0.7, behavior: "smooth" }));
+  document.getElementById("galNext").addEventListener("click", () => track.scrollBy({ left:  track.clientWidth * 0.7, behavior: "smooth" }));
 
-  // sync active dot on scroll
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -112,93 +183,196 @@ function initGallery() {
   slides.forEach(s => io.observe(s));
 }
 
-/* --- availability calendar ------------------------------------------------- */
-
-let selectedKey = null;
-
-function initCalendar() {
-  const weeks = buildWeeks();
-  const groups = groupByMonth(weeks);
-  const cal = document.getElementById("calendar");
-
-  cal.innerHTML = groups.map(g => `
-    <div class="cal-month">
-      <h3>${g.label}</h3>
-      <div class="cal-dow"><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
-      ${g.weeks.map(w => weekMarkup(w, g.month)).join("")}
-    </div>`).join("");
-
-  // populate the enquiry dropdown with available weeks
-  const sel = document.getElementById("fWeek");
-  sel.innerHTML = `<option value="">Flexible / not sure yet</option>` +
-    weeks.filter(w => w.status === "available")
-         .map(w => `<option value="${w.key}">${weekLabel(w)} — ${money.format(w.price)}</option>`).join("");
-
-  // wire clicks
-  cal.querySelectorAll(".wk:not(.wk-booked)").forEach(btn => {
-    btn.addEventListener("click", () => selectWeek(btn.dataset.key, weeks));
+function setGalleryCaptions() {
+  const caps = t("gallery.captions") || [];
+  document.querySelectorAll("#galleryTrack .gc-slide .ph-label").forEach((el, i) => {
+    if (caps[i]) el.textContent = caps[i];
   });
 }
 
-function weekMarkup(w, monthIndex) {
-  // 7 day cells starting at the week's Saturday
-  let days = "";
-  for (let d = 0; d < 7; d++) {
-    const day = addDays(w.start, d);
-    const out = day.getMonth() !== monthIndex ? " out" : "";
-    days += `<span class="d${out}">${day.getDate()}</span>`;
-  }
-  const booked = w.status === "booked";
-  return `
-    <button class="wk ${booked ? "wk-booked" : ""}" data-key="${w.key}" ${booked ? "disabled" : ""}>
-      <span class="wk-days">${days}</span>
-      <span class="wk-meta">
-        <span class="wk-price">${booked ? "" : money.format(w.price)}</span>
-        <span class="wk-cta">${booked ? "Booked" : "Enquire"}</span>
-      </span>
-    </button>`;
+/* --- date-range picker ----------------------------------------------------- */
+
+function weekdayHeaders() {
+  const loc = LOCALE[LANG] || "en-GB";
+  const fmt = new Intl.DateTimeFormat(loc, { weekday: "short" });
+  const monday = new Date(2024, 0, 1);                 // a Monday
+  return [...Array(7)].map((_, i) => fmt.format(addDays(monday, i)));
 }
 
-function selectWeek(key, weeks) {
-  selectedKey = key;
-  const week = weeks.find(w => w.key === key);
+function renderCalendar() {
+  const state = loadState();
+  const months = buildMonths(VILLA.monthsAhead);
+  const wk = weekdayHeaders();
+  const loc = LOCALE[LANG] || "en-GB";
 
-  document.querySelectorAll(".wk").forEach(b => b.classList.toggle("wk-selected", b.dataset.key === key));
+  document.getElementById("calendar").innerHTML = months.map(mo => {
+    const title = new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(new Date(mo.year, mo.month, 1));
+    const cells = mo.cells.map(c => {
+      if (!c) return `<span class="day empty"></span>`;
+      const booked = isNightBooked(c.date, state);
+      const open = !c.past && !booked;
+      const cls = c.past ? "is-past" : booked ? "is-booked" : "is-open";
+      return `<button type="button" class="day ${cls}" data-key="${c.key}" ${open ? "" : "disabled tabindex='-1'"}>${c.date.getDate()}</button>`;
+    }).join("");
+    return `<div class="cal-month"><h3>${title}</h3>
+      <div class="cal-dow">${wk.map(d => `<span>${d}</span>`).join("")}</div>
+      <div class="cal-grid">${cells}</div></div>`;
+  }).join("");
 
-  const box = document.getElementById("selectedWeek");
-  document.getElementById("selectedWeekText").textContent = `${weekLabel(week)} · ${money.format(week.price)}`;
-  box.hidden = false;
+  paintSelection();
+}
 
-  document.getElementById("fWeek").value = key;
+// Delegated calendar interactions (attached once).
+function initCalendarEvents() {
+  const cal = document.getElementById("calendar");
+  cal.addEventListener("click", e => {
+    const b = e.target.closest(".day.is-open");
+    if (b) onDayClick(b.dataset.key);
+  });
+  cal.addEventListener("mouseover", e => {
+    const b = e.target.closest(".day.is-open");
+    if (b) { hoverKey = b.dataset.key; paintSelection(); }
+  });
+  cal.addEventListener("mouseleave", () => { hoverKey = null; paintSelection(); });
+}
 
-  document.getElementById("enquire").scrollIntoView({ behavior: "smooth" });
+function onDayClick(key) {
+  const d = parseKey(key);
+  const state = loadState();
+
+  // Starting a fresh selection (nothing chosen, or a full range already set).
+  if (!sel.checkIn || (sel.checkIn && sel.checkOut)) {
+    sel = { checkIn: d, checkOut: null };
+  } else {
+    // We have a check-in and are choosing the check-out.
+    if (d <= sel.checkIn) {
+      sel = { checkIn: d, checkOut: null };            // restart earlier
+    } else if (isRangeAvailable(sel.checkIn, d, state)) {
+      sel.checkOut = d;
+    } else {
+      flashCalMessage(t("avail.unavailable"));         // range crosses booked nights
+      sel = { checkIn: d, checkOut: null };
+    }
+  }
+  hoverKey = null;
+  paintSelection();
+  updateSelectionOutputs();
+}
+
+// Preview end date while hovering during the check-out phase (if valid).
+function previewOut(state) {
+  if (sel.checkIn && !sel.checkOut && hoverKey) {
+    const h = parseKey(hoverKey);
+    if (h > sel.checkIn && isRangeAvailable(sel.checkIn, h, state)) return h;
+  }
+  return sel.checkOut;
+}
+
+function paintSelection() {
+  const state = loadState();
+  const inD = sel.checkIn;
+  const outD = previewOut(state);
+  document.querySelectorAll("#calendar .day[data-key]").forEach(el => {
+    const d = parseKey(el.dataset.key);
+    el.classList.toggle("is-checkin",  inD  && +d === +inD);
+    el.classList.toggle("is-checkout", outD && +d === +outD);
+    el.classList.toggle("in-range",    inD && outD && d > inD && d < outD);
+  });
+}
+
+function flashCalMessage(text) {
+  const q = document.getElementById("quote");
+  const prev = q.dataset.flash;
+  q.dataset.flash = "1";
+  const note = document.createElement("div");
+  note.className = "quote-flash";
+  note.textContent = text;
+  q.prepend(note);
+  setTimeout(() => { note.remove(); delete q.dataset.flash; }, 3200);
+  if (prev) return;
+}
+
+/* --- quote panel + form outputs -------------------------------------------- */
+
+function updateSelectionOutputs() {
+  const state = loadState();
+  const fmt = moneyFmt(LANG);
+  const q = document.getElementById("quote");
+  const belowMin = sel.checkIn && sel.checkOut && quote(sel.checkIn, sel.checkOut, state).nights < VILLA.minNights;
+
+  // Quote panel
+  if (!sel.checkIn) {
+    q.innerHTML = `<div class="quote-empty">
+      <span class="quote-ic">📅</span>
+      <p>${t("avail.pickPrompt")}</p>
+      <p class="quote-min">${t("avail.minStay").replace("%N", VILLA.minNights)}</p>
+    </div>`;
+  } else if (!sel.checkOut) {
+    q.innerHTML = `
+      <div class="quote-line"><span>${t("avail.checkIn")}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
+      <p class="quote-prompt">${t("avail.pickCheckout")}</p>
+      ${clearBtn()}`;
+  } else {
+    const { nights: n, total, avg } = quote(sel.checkIn, sel.checkOut, state);
+    q.innerHTML = `
+      <div class="quote-line"><span>${t("avail.checkIn")}</span><strong>${fmtDate(sel.checkIn, LANG)}</strong></div>
+      <div class="quote-line"><span>${t("avail.checkOut")}</span><strong>${fmtDate(sel.checkOut, LANG)}</strong></div>
+      <div class="quote-line quote-nights"><span>${nights(n, LANG)}</span><span>${fmt.format(avg)} · ${t("avail.perNight")}</span></div>
+      <div class="quote-total"><span>${t("avail.total")}</span><strong>${fmt.format(total)}</strong></div>
+      ${belowMin ? `<p class="quote-warn">${t("avail.tooShort").replace("%N", VILLA.minNights)}</p>` : ""}
+      <button type="button" class="btn btn-primary btn-block" id="quoteEnquire" ${belowMin ? "disabled" : ""}>${t("avail.enquireBtn")}</button>
+      ${clearBtn()}`;
+    if (!belowMin) {
+      document.getElementById("quoteEnquire").addEventListener("click", () =>
+        document.getElementById("enquire").scrollIntoView({ behavior: "smooth" }));
+    }
+  }
+  const clr = document.getElementById("clearDates");
+  if (clr) clr.addEventListener("click", clearSelection);
+
+  // Enquiry form fields
+  const display = document.getElementById("datesDisplay");
+  const setHidden = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  if (sel.checkIn && sel.checkOut && !belowMin) {
+    const { nights: n, total } = quote(sel.checkIn, sel.checkOut, state);
+    const readable = `${fmtRange(sel.checkIn, sel.checkOut, LANG)} · ${nights(n, LANG)}`;
+    display.textContent = readable;
+    display.classList.add("has-dates");
+    setHidden("fCheckIn", keyOf(sel.checkIn));
+    setHidden("fCheckOut", keyOf(sel.checkOut));
+    setHidden("fNights", n);
+    setHidden("fTotal", total);
+    setHidden("fDates", `${readable} (~${fmt.format(total)})`);
+  } else {
+    display.textContent = t("enquire.datesFlexible");
+    display.classList.remove("has-dates");
+    ["fCheckIn","fCheckOut","fNights","fTotal"].forEach(id => setHidden(id, ""));
+    setHidden("fDates", t("enquire.datesFlexible"));
+  }
+}
+
+function clearBtn() {
+  return `<button type="button" class="quote-clear" id="clearDates">${t("avail.clear")}</button>`;
 }
 
 function clearSelection() {
-  selectedKey = null;
-  document.querySelectorAll(".wk").forEach(b => b.classList.remove("wk-selected"));
-  document.getElementById("selectedWeek").hidden = true;
-  document.getElementById("fWeek").value = "";
+  sel = { checkIn: null, checkOut: null };
+  hoverKey = null;
+  paintSelection();
+  updateSelectionOutputs();
 }
 
 /* --- enquiry form ---------------------------------------------------------- */
 
 function initForm() {
-  document.getElementById("clearWeek").addEventListener("click", clearSelection);
-
   const form = document.getElementById("enquiryForm");
+
+  document.getElementById("datesDisplay").addEventListener("click", () =>
+    document.getElementById("availability").scrollIntoView({ behavior: "smooth" }));
+
   form.addEventListener("submit", async e => {
     e.preventDefault();
-
-    // Capture the human-readable week text rather than the internal key.
-    const weekSel = document.getElementById("fWeek");
-    const weekText = weekSel.selectedOptions[0]?.text || "Flexible / not sure yet";
     const data = new FormData(form);
-    data.set("week", weekText);
-
-    // Primary path: hand the enquiry to Netlify Forms (captured + emailed to
-    // the owner, no email app required). If that isn't available — e.g. opened
-    // locally or hosted somewhere without Forms — fall back to a mailto.
     try {
       const res = await fetch("/", {
         method: "POST",
@@ -208,27 +382,26 @@ function initForm() {
       if (!res.ok) throw new Error("form endpoint unavailable");
       showSuccess();
     } catch (err) {
-      openMailto(weekText);
+      openMailto();
     }
   });
 }
 
 function showSuccess() {
-  const form = document.getElementById("enquiryForm");
-  form.hidden = true;
-  document.getElementById("selectedWeek").hidden = true;
+  document.getElementById("enquiryForm").hidden = true;
   document.getElementById("formSuccess").hidden = false;
   document.getElementById("formSuccess").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function openMailto(weekText) {
+function openMailto() {
   const val = id => document.getElementById(id).value.trim();
+  const dates = val("fDates") || t("enquire.datesFlexible");
   const subject = `Booking enquiry — ${VILLA.name}`;
   const body =
     `Hello,\n\nI'd like to enquire about staying at ${VILLA.name}.\n\n` +
     `Name: ${val("fName")}\n` +
     `Email: ${val("fEmail")}\n` +
-    `Preferred week: ${weekText}\n` +
+    `Dates: ${dates}\n` +
     `Guests: ${val("fGuests")}\n\n` +
     `${val("fMessage") || "(no message)"}\n\n` +
     `Sent from the ${VILLA.name} website.`;
@@ -257,33 +430,15 @@ function initChrome() {
   }));
 }
 
-/* --- testimonials ---------------------------------------------------------- */
+/* --- testimonials rotation (reads current DOM each tick) ------------------- */
 
-function initTestimonials() {
-  const wrap = document.getElementById("testimonials");
-  wrap.innerHTML = TESTIMONIALS.map((t, i) => `
-    <figure class="testimonial ${i === 0 ? "active" : ""}">
-      <blockquote>“${t.quote}”</blockquote>
-      <figcaption class="who">${t.name}</figcaption>
-    </figure>`).join("");
-  const items = [...wrap.children];
-  if (items.length < 2) return;
+function initTestimonialRotation() {
   let i = 0;
   setInterval(() => {
-    items[i].classList.remove("active");
+    const items = [...document.querySelectorAll("#testimonials .testimonial")];
+    if (items.length < 2) return;
+    items[i % items.length]?.classList.remove("active");
     i = (i + 1) % items.length;
     items[i].classList.add("active");
   }, 6000);
 }
-
-/* --- boot ------------------------------------------------------------------ */
-
-document.addEventListener("DOMContentLoaded", () => {
-  injectContent();
-  initHero();
-  initGallery();
-  initCalendar();
-  initForm();
-  initChrome();
-  initTestimonials();
-});

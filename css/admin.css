@@ -134,7 +134,52 @@ code { background: var(--sand-2); padding: 0.1rem 0.4rem; border-radius: 5px; fo
   resize: vertical;
 }
 
+/* --- range forms (block dates / custom pricing) ---------------------------- */
+
+.opt-tag {
+  font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-mute); border: 1px solid var(--line); border-radius: 100px;
+  padding: 0.15rem 0.55rem; vertical-align: middle; margin-left: 0.4rem;
+}
+.range-form {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem;
+  margin-top: 1.2rem;
+}
+.range-form label {
+  display: flex; flex-direction: column; gap: 0.35rem;
+  font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+}
+.range-form input {
+  font-family: var(--sans); font-size: 0.95rem; color: var(--ink);
+  padding: 0.6rem 0.7rem; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--sand);
+}
+.range-form input:focus { outline: none; border-color: var(--pine); background: #fff; }
+.range-error { color: var(--terra-dk); font-size: 0.85rem; margin-top: 0.8rem; }
+
+.range-list { list-style: none; margin-top: 1.2rem; display: grid; gap: 0.5rem; }
+.range-list li {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.7rem 0.9rem; background: var(--sand); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); font-size: 0.92rem;
+}
+.range-list li em { color: var(--ink-mute); font-style: normal; font-size: 0.85rem; }
+.range-empty { color: var(--ink-mute); border-style: dashed !important; justify-content: center !important; }
+.range-remove {
+  border: none; background: none; cursor: pointer; color: var(--terra-dk);
+  font-family: var(--sans); font-size: 0.82rem; text-decoration: underline; white-space: nowrap;
+}
+.range-remove:hover { color: var(--terra); }
+
+/* --- read-only calendar preview -------------------------------------------- */
+
+.admin-preview { box-shadow: none; }
+.admin-preview .day { cursor: default; }
+.admin-preview .day.is-open:hover { background: transparent; }
+.admin-preview .cal-month { background: var(--sand); }
+
 @media (max-width: 640px) {
-  .wk-row { grid-template-columns: 1fr; gap: 0.5rem; }
   .rate-row { grid-template-columns: 1fr; }
+  .range-form { gap: 0.7rem; }
+  .range-form label, .range-form .btn { width: 100%; }
 }

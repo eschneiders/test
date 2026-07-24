@@ -30,7 +30,8 @@ Netlify dashboard automatically. To also get an email each time someone enquires
 1. In your site, go to **Forms** (you'll see a form named **`enquiry`** after the
    first deploy).
 2. Open **Form notifications → Add notification → Email notification**.
-3. Enter your email address. Done — you'll now be emailed every booking enquiry.
+3. Enter **mpschneiders@gmail.com**. Done — you'll now be emailed every booking
+   enquiry (with the guest's chosen dates, nights and estimated total).
 
 > Tip: Netlify's free plan includes 100 form submissions/month, which is plenty
 > for a single villa.
