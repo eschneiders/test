@@ -173,10 +173,15 @@ code { background: var(--sand-2); padding: 0.1rem 0.4rem; border-radius: 5px; fo
 
 /* --- read-only calendar preview -------------------------------------------- */
 
-.admin-preview { box-shadow: none; }
+.admin-preview {
+  box-shadow: none;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.4rem;
+}
 .admin-preview .day { cursor: default; }
 .admin-preview .day.is-open:hover { background: transparent; }
 .admin-preview .cal-month { background: var(--sand); }
+
+@media (max-width: 640px) { .admin-preview { grid-template-columns: 1fr; } }
 
 @media (max-width: 640px) {
   .rate-row { grid-template-columns: 1fr; }

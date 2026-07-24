@@ -9,6 +9,10 @@ let LANG = document.documentElement.lang || "en";
 let sel = { checkIn: null, checkOut: null };   // Date objects
 let hoverKey = null;
 
+const CAL_MONTHS_PER_PAGE = 2;   // how many months are visible at once
+const CAL_STEP = 1;              // months moved per prev/next click
+let calPage = 0;                 // index of the first visible month (0 = this month)
+
 document.addEventListener("DOMContentLoaded", () => {
   initHero();
   initGallery();
@@ -78,11 +82,22 @@ function weekdayHeaders() {
 function renderCalendar() {
   const state = loadState();
   const months = buildMonths(VILLA.monthsAhead);
+  const maxPage = Math.max(0, months.length - CAL_MONTHS_PER_PAGE);
+  calPage = Math.min(Math.max(0, calPage), maxPage);
+  const shown = months.slice(calPage, calPage + CAL_MONTHS_PER_PAGE);
   const wk = weekdayHeaders();
   const loc = LOCALE[LANG] || "en-GB";
 
-  document.getElementById("calendar").innerHTML = months.map(mo => {
-    const title = new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(new Date(mo.year, mo.month, 1));
+  const fmtMY = m => new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(new Date(m.year, m.month, 1));
+  const fmtM  = m => new Intl.DateTimeFormat(loc, { month: "long" }).format(new Date(m.year, m.month, 1));
+
+  const first = shown[0], last = shown[shown.length - 1];
+  let range;
+  if (shown.length === 1)          range = fmtMY(first);
+  else if (first.year === last.year) range = `${fmtM(first)} – ${fmtM(last)} ${first.year}`;
+  else                             range = `${fmtMY(first)} – ${fmtMY(last)}`;
+
+  const monthCard = mo => {
     const cells = mo.cells.map(c => {
       if (!c) return `<span class="day empty"></span>`;
       const booked = isNightBooked(c.date, state);
@@ -90,10 +105,18 @@ function renderCalendar() {
       const cls = c.past ? "is-past" : booked ? "is-booked" : "is-open";
       return `<button type="button" class="day ${cls}" data-key="${c.key}" ${open ? "" : "disabled tabindex='-1'"}>${c.date.getDate()}</button>`;
     }).join("");
-    return `<div class="cal-month"><h3>${title}</h3>
+    return `<div class="cal-month"><h3>${fmtMY(mo)}</h3>
       <div class="cal-dow">${wk.map(d => `<span>${d}</span>`).join("")}</div>
       <div class="cal-grid">${cells}</div></div>`;
-  }).join("");
+  };
+
+  document.getElementById("calendar").innerHTML = `
+    <div class="cal-toolbar">
+      <button type="button" class="cal-nav cal-prev" aria-label="Previous months" ${calPage <= 0 ? "disabled" : ""}>‹</button>
+      <span class="cal-range">${range}</span>
+      <button type="button" class="cal-nav cal-next" aria-label="Next months" ${calPage >= maxPage ? "disabled" : ""}>›</button>
+    </div>
+    <div class="cal-pages">${shown.map(monthCard).join("")}</div>`;
 
   paintSelection();
 }
@@ -101,6 +124,12 @@ function renderCalendar() {
 function initCalendarEvents() {
   const cal = document.getElementById("calendar");
   cal.addEventListener("click", e => {
+    const nav = e.target.closest(".cal-nav");
+    if (nav && !nav.disabled) {
+      calPage += nav.classList.contains("cal-prev") ? -CAL_STEP : CAL_STEP;
+      renderCalendar();
+      return;
+    }
     const b = e.target.closest(".day.is-open");
     if (b) onDayClick(b.dataset.key);
   });

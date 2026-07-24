@@ -400,13 +400,27 @@ a { color: inherit; text-decoration: none; }
   gap: 1.8rem;
   align-items: start;
 }
-.cal {
+.cal-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin-bottom: 1.3rem;
+}
+.cal-range {
+  font-family: var(--serif); font-weight: 500; font-size: 1.35rem; color: var(--pine);
+  text-transform: capitalize;
+}
+.cal-nav {
+  width: 42px; height: 42px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  border-radius: 50%; font-size: 1.5rem; line-height: 1; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.cal-nav:hover:not(:disabled) { background: var(--sand-2); border-color: var(--pine); }
+.cal-nav:disabled { opacity: 0.3; cursor: default; }
+.cal-pages {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.4rem;
-  max-height: 620px;
-  overflow-y: auto;
-  padding: 0.3rem 0.6rem 0.3rem 0.3rem;
 }
 .cal-month {
   background: var(--white);
@@ -607,7 +621,7 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 900px) {
   .amenity-grid { grid-template-columns: repeat(2, 1fr); }
   .booking { grid-template-columns: 1fr; }
-  .cal { grid-template-columns: 1fr; max-height: none; overflow: visible; padding: 0; }
+  .cal-pages { grid-template-columns: 1fr; }
   .quote { position: static; order: -1; }
   .location-inner { grid-template-columns: 1fr; }
   .enquiry-form { grid-template-columns: 1fr; }
